@@ -1,0 +1,31 @@
+{
+    "GitHidder.title": "GitHidder",
+    "GitHidder.keywordlist.title": "Password List",
+    "GitHidder.description.upperlimit": "The upper limit of highlighting keyword count.",
+    "GitHidder.description.savelist": "Saved keywords.",
+    "GitHidder.description.brightness.dark": "Highlighter brightness (Dark theme). 255 is the brightest.",
+    "GitHidder.description.brightness.light": "Highlighter brightness (Light theme). 255 is the brightest.",
+    "GitHidder.description.forcevisible": "Force visible a color when the keyword is added.",
+    "GitHidder.warning.upperlimit.1": "Suspended a process. Found over the upper limit [",
+    "GitHidder.warning.upperlimit.2": "] of highlighting keyword count.",
+    "GitHidder.warning.existkeyword": "The password already exists.",
+    "GitHidder.information.done": "Done.",
+    "GitHidder.error": "Error occurred.",
+    "GitHidder.keywordlist.add.title": "Add new password",
+    "GitHidder.keywordlist.delete.title": "Delete keyword",
+    "GitHidder.keywordlist.save.title": "Save list",
+    "GitHidder.keywordlist.addselect.title": "Hide this code",
+
+
+    "GitHidder.highlighter.add.title": "Add color",
+    "GitHidder.highlighter.delete.title": "Delete color/Reveal all",
+    "GitHidder.highlighter.change.title": "Change color",
+    
+    "GitHidder.highlighter.editkeyword.title": "Edit",
+    "GitHidder.highlighter.toggleRed.title": "Red",
+    "GitHidder.highlighter.toggleGreen.title": "Green",
+    "GitHidder.highlighter.toggleBlue.title": "Blue",
+    "GitHidder.highlighter.toggleYellow.title": "Yellow",
+    "GitHidder.highlighter.togglePink.title": "Pink",
+    "GitHidder.highlighter.toggleCyan.title": "Cyan"
+}

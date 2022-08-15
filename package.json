@@ -1,0 +1,236 @@
+{
+	"name": "GitHidder",
+	"displayName": "GitHidder",
+	"description": "Highlighting keywords in the color you want.",
+	"version": "1.1.5",
+	"publisher": "456ken",
+	"engines": {
+		"vscode": "^1.36.0"
+	},
+	"license": "SEE LICENSE IN LICENSE.txt",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/456ken/Highlighter-vscode"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"highlight",
+		"highlighter",
+		"mark",
+		"marker",
+		"linemarker"
+	],
+	"icon": "GitHidder.png",
+	"activationEvents": [
+		"*"
+	],
+	"main": "./out/src/extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "GitHidder.AddKeyword",
+				"title": "Add new password",
+				"icon": {
+					"dark": "resources/dark/plus.svg",
+					"light": "resources/light/plus.svg"
+				}
+			},
+			{
+				"command": "GitHidder.DeleteKeyword",
+				"title": "Delete keyword",
+				"icon": {
+					"dark": "resources/dark/cross.svg",
+					"light": "resources/light/cross.svg"
+				}
+			},
+			{
+				"command": "GitHidder.DeleteColor",
+				"title": "Delete color/Reveal all",
+				"icon": {
+					"dark": "resources/dark/cross.svg",
+					"light": "resources/light/cross.svg"
+				}
+			},
+			{
+				"command": "GitHidder.ChangeColor",
+				"title": "Change color"
+			},
+			{
+				"command": "GitHidder.SaveList",
+				"title": "Save list"
+			},
+			{
+				"command": "GitHidder.AddSelection",
+				"title": "Hide this code"
+			},
+			{
+				"command": "GitHidder.EditKeyword",
+				"title": "Edit"
+			},
+			{
+				"command": "GitHidder.ToggleColorRed",
+				"title": "%GitHidder.highlighter.toggleRed.title%"
+			},
+			{
+				"command": "GitHidder.ToggleColorGreen",
+				"title": "%GitHidder.highlighter.toggleGreen.title%"
+			},
+			{
+				"command": "GitHidder.ToggleColorBlue",
+				"title": "%GitHidder.highlighter.toggleBlue.title%"
+			},
+			{
+				"command": "GitHidder.ToggleColorYellow",
+				"title": "%GitHidder.highlighter.toggleYellow.title%"
+			},
+			{
+				"command": "GitHidder.ToggleColorPink",
+				"title": "%GitHidder.highlighter.togglePink.title%"
+			},
+			{
+				"command": "GitHidder.ToggleColorCyan",
+				"title": "%GitHidder.highlighter.toggleCyan.title%"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "GitHidder",
+					"title": "%mch.title%",
+					"icon": "media/mch.svg"
+				}
+			]
+		},
+		"views": {
+			"GitHidder": [
+				{
+					"id": "keywordlist",
+					"name": "Password List"
+				}
+			]
+		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "GitHidder.AddKeyword",
+					"when": "view == keywordlist && viewItem == highlighter",
+					"group": "inline"
+				},
+				{
+					"command": "GitHidder.DeleteColor",
+					"when": "view == keywordlist && viewItem == highlighter",
+					"group": "inline"
+				},
+				{
+					"command": "GitHidder.AddKeyword",
+					"when": "view == keywordlist && viewItem == highlighter",
+					"group": "highlighter@1"
+				},
+				{
+					"command": "GitHidder.ChangeColor",
+					"when": "view == keywordlist && viewItem == highlighter",
+					"group": "highlighter@2"
+				},
+				{
+					"command": "GitHidder.DeleteColor",
+					"when": "view == keywordlist && viewItem == highlighter",
+					"group": "highlighter@3"
+				},
+				{
+					"command": "GitHidder.DeleteKeyword",
+					"when": "view == keywordlist && viewItem == keyworditem",
+					"group": "inline"
+				},
+				{
+					"command": "GitHidder.EditKeyword",
+					"when": "view == keywordlist && viewItem == keyworditem",
+					"group": "keyworditem@2"
+				},
+				{
+					"command": "GitHidder.DeleteKeyword",
+					"when": "view == keywordlist && viewItem == keyworditem",
+					"group": "keyworditem@3"
+				}
+			],
+			"view/title": [
+				{
+					"command": "GitHidder.AddColor",
+					"when": "view == keywordlist",
+					"group": "viewtitle@1"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "GitHidder.AddSelection",
+					"when": "editorHasSelection && !editorHasMultipleSelections"
+				}
+			]
+		},
+		"configuration": [
+			{
+				"title": "GitHidder",
+				"properties": {
+					"GitHidder.upperlimit": {
+						"type": "integer",
+						"default": "100000",
+						"description": "The upper limit of highlighting keyword count"
+					},
+					"GitHidder.savelist": {
+						"type": "array",
+						"items": {
+							"color": {
+								"type": "string"
+							},
+							"keyword": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						},
+						"description": "%Saved keywords%"
+					},
+					"GitHidder.brightness.dark": {
+						"type": "integer",
+						"minimum": "0",
+						"maximum": "255",
+						"default": "85",
+						"description": "Highlighter brightness (Dark theme). 255 is the brightest."
+					},
+					"GitHidder.brightness.light": {
+						"type": "integer",
+						"minimum": "0",
+						"maximum": "255",
+						"default": "85",
+						"description": "Highlighter brightness (Light theme). 255 is the brightest."
+					},
+					"GitHidder.forcevisible": {
+						"type": "boolean",
+						"default": "true",
+						"description": "Force visible a color when the keyword is added"
+					}
+				}
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"dependencies": {
+		"minimist": "^1.2.5"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.42",
+		"@types/node": "^8.10.66",
+		"minimist": "^1.2.5",
+		"tslint": "^5.20.0",
+		"typescript": "^2.6.1",
+		"vscode": "^1.1.21"
+	}
+}
