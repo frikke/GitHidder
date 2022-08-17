@@ -98,7 +98,7 @@
 			"activitybar": [
 				{
 					"id": "GitHidder",
-					"title": "%mch.title%",
+					"title": "%GitHidder.title%",
 					"icon": "media/mch.svg"
 				}
 			]

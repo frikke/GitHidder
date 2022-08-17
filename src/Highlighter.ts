@@ -47,6 +47,73 @@ export class Highlighter extends vscode.TreeItem {
             }
         }
         else if (typeof keyword === 'string' && 0 < keyword.length) {
+
+            // ----------------------------- Check if user has Git in this PC --------------------------------
+            const CheckGit = exec('git --version',(error:any, stdout:any, stderr:any) => {
+                if(stdout != `'git' is not recognized as an internal or external command,
+                operable program or batch file.`){
+                    // --------------------------------Find the path of the file on vs editor -------------------
+                            
+                    var filePath = "";  //path with "/"
+                    var filePath1 = "";  //path with "\"
+                    var filePath2 = "";  //path with file in the end
+
+                    var editor = vscode.window.activeTextEditor;
+
+                    if (editor) {
+                        filePath = editor.document.fileName;
+                        console.log(filePath)
+                        filePath2=filePath;
+                        console.log(filePath.lastIndexOf("\\"))
+                        let lastSeen =filePath.lastIndexOf("\\");
+                        console.log(filePath.substr(0, lastSeen+1))
+                        filePath1=filePath.substr(0, lastSeen+1);
+                        filePath=filePath1.replace(/\\/g, "/")
+                        console.log("filePath ->"+filePath)
+                        console.log("filePath1 -> "+filePath1)
+                        console.log("filePath2 -> "+filePath2)
+                    }
+
+                    // -------------------------------- Make .gitattributes file for filter -------------------
+                    const content = '* text eol=lf filter=reductScript';
+                    try {
+                        fs.writeFileSync(filePath+'/.gitattributes', content);
+                        console.log("done making .gitattributes file");
+                    } catch (err) {
+                        console.log(err);
+                    }
+
+                    // ----------------------------- Check changes ----------------------
+                    const child = exec('cd '+filePath1 + `&& git diff `+filePath2,
+                    (error1:any, stdout1:any, stderr1:any) => {
+                        if(error1 !== null || stderr1!= "") {
+                            vscode.window.showErrorMessage("An error has occured ");
+                        }else{
+                            if(stdout1 != ""){
+                                // ----------------------------- Execute git command filter--------------------------------
+                                console.log("Executing git command");
+                                const child1 = exec('cd '+filePath1 + `&& git config filter.reductScript.clean "sed -e 's/code1/super-secret-token1-codexx121311/g' -e 's/code3/super-secret-token1-codexx312/g'"`,
+                                (error:any, stdout:any, stderr:any) => {
+                                    if (error !== null) {
+                                        console.log(`exec error: ${error}`);
+                                    }else{
+                                        console.log("done applying git config filter....");
+                                        console.log(`stdout: ${stdout}`);
+                                        console.log(`stderr: ${stderr}`);
+                                    }
+                                });
+                            }else{
+                                vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on GitHub");
+                            }
+                        }
+                    });
+                }else if(error !== null || stderr!= ""){
+                    vscode.window.showErrorMessage("An error has occured ");
+                }else{
+                    vscode.window.showInformationMessage("You need to download and install Git with up to 2. version");
+                }
+            });
+
             if (this.children.findIndex(value => value.label === keyword) < 0) {
                 this.children.push(new KeywordItem(keyword));
             }
