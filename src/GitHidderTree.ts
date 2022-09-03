@@ -161,6 +161,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * Load the keywordlist from workspace settings.json.
 	 */
 	load(): boolean {
+		console.log("aaaaaaaaaaaaaaaaaaaa11111")
 		const GitHidderconfig = vscode.workspace.getConfiguration("GitHidder");
 		if (GitHidderconfig === undefined) {
 			return false;
@@ -347,12 +348,15 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param context 
 	 */
 	constructor(private context: vscode.ExtensionContext) {
+		console.log("aaaaaaaaaaaaaaaaaaaa33333")
 		// vscode.window.showInformationMessage('GitHidderTreeDataProvider constractor.');
 
 		var result = this.load();
 		if (!result) {
 			this.data.push(new Highlighter(this.ColorSet.Red, []));
 		}
+
+		
 
 		// this.changeActive(this.data[0]);
 	}

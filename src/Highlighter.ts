@@ -35,9 +35,52 @@ export class Highlighter extends vscode.TreeItem {
         this.children = [];
     }
     remove(keyworditem: KeywordItem) {
+        console.error("remove")
         var index = this.children.findIndex(value => value === keyworditem);
+        console.error("length--->"+this.children.length)
         if (0 <= index) {
-            this.children.splice(index, 1);
+            console.error("remove1")
+
+            var editor = vscode.window.activeTextEditor;
+            if (editor) {
+                var filePath = editor.document.fileName;
+                let lastSeen =filePath.lastIndexOf("\\");
+                var filePath1=filePath.substr(0, lastSeen+1);
+                var fileName=filePath.substr(lastSeen+1,filePath.length)
+
+                 // ----------------------------- Check changes ----------------------       git diff "C:\Users"
+                 const child = exec('cd '+filePath1 + `&& git status `+fileName,(error1:any, stdout1:any, stderr1:any) => {
+                    if(error1 !== null || stderr1!= "") {
+                        vscode.window.showErrorMessage("An error has occured 1");
+                    }else{
+                        // console.log("stdout1 -> "+stdout1)
+                        if(stdout1.includes(fileName)){
+                            console.error("Executing git command");
+                             // ----------------------------- Remove string from list --------------------------------
+                            this.children.splice(index, 1);
+                            this.refresh();
+                            // ----------------------------- Execute git command filter --------------------------------
+                            const child1 = exec('cd '+filePath1 + `&& `+this.makeGitFilterStr(this.children),
+                            (error:any, stdout:any, stderr:any) => {
+                                if (error !== null) {
+                                    console.log(`exec error: ${error}`);
+                                }else{
+                                    console.log("done applying git config filter....");
+                                    console.log(`stdout: ${stdout}`);
+                                    console.log(`stderr: ${stderr}`);
+                                    console.error("length--->"+this.children.length)
+                                    //------------------------ Delete .gitattributes if list size is 0
+                                    // if(this.children.length == 0){
+                                    //     fs.unlinkSync(filePath+'/.gitattributes');
+                                    // }
+                                }
+                            });
+                        }else{
+                            vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on Git");
+                        }
+                    }
+                });
+            }
         }
     }
     add(keyword: string | KeywordItem) {
@@ -63,9 +106,6 @@ export class Highlighter extends vscode.TreeItem {
 
                     if (editor) {
                         filePath = editor.document.fileName;
-                        // console.log(filePath)
-                        // filePath2=filePath;
-                        // console.log(filePath.lastIndexOf("\\"))
                         let lastSeen =filePath.lastIndexOf("\\");
                         // console.log(filePath.substr(0, lastSeen+1))
                         filePath1=filePath.substr(0, lastSeen+1);
@@ -87,8 +127,7 @@ export class Highlighter extends vscode.TreeItem {
                     }
 
                     // ----------------------------- Check changes ----------------------       git diff "C:\Users"
-                    const child = exec('cd '+filePath1 + `&& git status `+fileName,
-                    (error1:any, stdout1:any, stderr1:any) => {
+                    const child = exec('cd '+filePath1 + `&& git status `+fileName,(error1:any, stdout1:any, stderr1:any) => {
                         if(error1 !== null || stderr1!= "") {
                             vscode.window.showErrorMessage("An error has occured 1");
                         }else{
@@ -100,7 +139,7 @@ export class Highlighter extends vscode.TreeItem {
                                     this.children.push(new KeywordItem(keyword));
                                     this.refresh();
                                 }
-                                // ----------------------------- Execute git command filter--------------------------------
+                                // ----------------------------- Execute git command filter --------------------------------
                                 const child1 = exec('cd '+filePath1 + `&& `+this.makeGitFilterStr(this.children),
                                 (error:any, stdout:any, stderr:any) => {
                                     if (error !== null) {
