@@ -166,11 +166,9 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		if (GitHidderconfig === undefined) {
 			return false;
 		}
-
 		if (GitHidderconfig.has("savelist") === false) {
 			return false;
 		}
-
 		const savelist = <SaveList[]>GitHidderconfig.get("savelist");
 		const implementsSaveList = function (params: any): params is SaveList[] {
 			return (params !== null &&
@@ -182,11 +180,14 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 				isArray(params[0].keyword) &&
 				typeof params[0].keyword[0] === "string");
 		};
+
+
 		if (!implementsSaveList(savelist)) {
 			return false;
+			
 		}
-
 		savelist.forEach(obj => {
+			console.log("sfsdvfscvs")
 			let highlighter = new Highlighter(this._colorset.filter(value => value.name.toLowerCase() === obj.color.toLowerCase())[0], []);
 			obj.keyword.forEach(key => highlighter.add(key));
 			this.data.push(highlighter);
