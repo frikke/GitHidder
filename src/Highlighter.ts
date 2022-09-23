@@ -23,10 +23,6 @@ export class Highlighter extends vscode.TreeItem {
         this.colortype = colortype;
         this.children = children;
         this.iconPath = colortype.icon;
-        console.log("aaaaaaaaaaaaaaaaaa")
-        // const s = "sed -e 's/werffwer/XXXXXXX-YOUR-PASSWORD-XXXXXXX/g' -e 's/sdsdsds/XXXXXXX-YOUR-PASSWORD-XXXXXXX/g' ";
-        //  const matches = s.matchAll(/-e 's\/(.*?)\//g);
-        // console.log(Array.from(matches, x => x[1]));
         // --------------------------- Check git existance ------------------------------
         const CheckGit = exec('git --version',(error:any, stdout:any, stderr:any) => {
             if(stdout != `'git' is not recognized as an internal or external command,
@@ -126,9 +122,9 @@ export class Highlighter extends vscode.TreeItem {
                                     console.log(`stderr: ${stderr}`);
                                     console.error("length--->"+this.children.length)
                                     //------------------------ Delete .gitattributes if list size is 0
-                                    if(this.children.length == 0){
-                                        this.deleteAttributeFile(currentFileDirectoryPath)
-                                    }
+                                    // if(this.children.length == 0){
+                                    //     this.deleteAttributeFile(currentFileDirectoryPath)
+                                    // }
                                 }
                             });
                         }else{
@@ -140,16 +136,16 @@ export class Highlighter extends vscode.TreeItem {
         }
     }
 
-    deleteAttributeFile(filePath:string) {
-        const child1 = exec('cd '+filePath + `&& git rev-parse --show-toplevel`, (error:any, stdout:any, stderr:any) => {
-            if (error != null) {
-                console.log("error on deleting .gitattributes file"+error);
-            }else{
-                fs.unlinkSync(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes');
-                console.log("done deleting .gitattributes file");
-            }
-        });
-    }
+    // deleteAttributeFile(filePath:string) {
+    //     const child1 = exec('cd '+filePath + `&& git rev-parse --show-toplevel`, (error:any, stdout:any, stderr:any) => {
+    //         if (error != null) {
+    //             console.log("error on deleting .gitattributes file"+error);
+    //         }else{
+    //             fs.unlinkSync(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes');
+    //             console.log("done deleting .gitattributes file");
+    //         }
+    //     });
+    // }
 
 
 
@@ -182,58 +178,59 @@ export class Highlighter extends vscode.TreeItem {
                         // console.log(filePath.substr(0, lastSeen+1))
                         filePath1=filePath.substr(0, lastSeen+1);
                         fileName=filePath.substr(lastSeen+1,filePath.length)
-                        filePath=filePath1.replace(/\\/g, "/")
+                        // filePath=filePath1.replace(/\\/g, "/")
                         console.log("filePath ->"+filePath)
                         console.log("filePath1 -> "+filePath1)
                         // console.log("filePath2 -> "+filePath2)
                         console.log("fileName -> "+fileName)
                     }
 
-                    // ----------------------------- Check changes ----------------------       git diff "C:\Users"
-                    const child = exec('cd '+filePath1 + `&& git status `+fileName,(error1:any, stdout1:any, stderr1:any) => {
-                        if(error1 !== null || stderr1!= "") {
-                            vscode.window.showErrorMessage("An error has occured 1");
+                    // // -------------------------------- Get project directory path1 -------------------
+                    const child1 = exec('cd '+filePath1 + `&& git rev-parse --show-toplevel`, (errorGetProjPath:any, stdoutGetProjPath:any, stderrGetProjPath:any) => {
+                        if (errorGetProjPath != null) {
+                            console.log("error on add 'Get root project directory path1'"+errorGetProjPath);
+                            vscode.window.showErrorMessage("An error has occured 0");
                         }else{
-                            // console.log("stdout1 -> "+stdout1)
-                            if(stdout1.includes(fileName)){
-                                console.error("Executing git command");
-                                // ----------------------------- Adding word to keywordList --------------------------------
-                                if (this.children.findIndex(value => value.label === keyword) < 0) {
-                                    this.children.push(new KeywordItem(keyword));
-                                    this.refresh();
-                                }
-                                // -------------------------------- Make .gitattributes file for filter -------------------
-                                const content = '* text eol=lf filter=reductScript';
-                                try {
-                                     // -------------------------------- Get root project directory -------------------
-                                    const child1 = exec('cd '+filePath1 + `&& git rev-parse --show-toplevel`, (error:any, stdout:any, stderr:any) => {
-                                        if (error != null) {
-                                            console.log("error on add 'Make .gitattributes file for filter 0'"+error);
-                                        }else{
-                                            console.log(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes');
-                                            fs.writeFileSync(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', content);
-                                            console.log("done making .gitattributes file"+path);
-                                        }
-                                    });
-                                } catch (err) {
-                                    console.log("error on add 'Make .gitattributes file for filter1'"+err);
-                                }
-                                // ----------------------------- Execute git command filter --------------------------------
-                                const child1 = exec('cd '+filePath1 + ` && `+this.makeGitFilterStr(this.children),
-                                (error:any, stdout:any, stderr:any) => {
-                                    if (error !== null) {
-                                        console.log(`exec error: ${error}`);
-                                    }else{
-                                        console.log("done applying git config filter....");
-                                        console.log(`stdout: ${stdout}`);
-                                        console.log(`stderr: ${stderr}`);
-                                    }
-                                });
+                        // ----------------------------- Check changes ----------------------       git diff "C:\Users\...\."
+                        const child = exec('cd '+filePath1 + ` && git status`,(errorGitStatus:any, stdoutGitStatus:any, stderrGitStatus:any) => {
+                            if(errorGitStatus !== null || stderrGitStatus!= "") {
+                                vscode.window.showErrorMessage("An error has occured 1");
                             }else{
-                                vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on Git");
+                                if(stdoutGitStatus.includes(fileName)){
+                                    console.error("Making file");
+                                    let status = this.MakeGitAttribute(stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\"))
+                                    console.error("Adding word to keywordList");
+
+                                    if(status){
+                                        // ----------------------------- Adding word to keywordList --------------------------------
+                                        if (this.children.findIndex(value => value.label === keyword) < 0) {
+                                            this.children.push(new KeywordItem(keyword));
+                                        }
+                                        // ----------------------------- Execute git command filter --------------------------------
+                                        console.error("Executing git command");
+                                        const child1 = exec('cd '+stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\") + ` && `+this.makeGitFilterStr(this.children),
+                                        (error:any, stdout:any, stderr:any) => {
+                                            if (error !== null) {
+                                                console.log(`exec error: ${error}`);
+                                            }else{
+                                                this.refresh();
+                                                console.log("done applying git config filter....");
+                                                console.log(`stdout: ${stdout}`);
+                                                console.log(`stderr: ${stderr}`);
+                                            }
+                                        });
+                                    }
+                                    else{
+                                        vscode.window.showErrorMessage("An error has occurred while making .gitattribute file");
+                                    }
+                                }else{
+                                    vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on Git");
+                                }
                             }
+                        });
                         }
                     });
+
                 }else if(error !== null || stderr!= ""){
                     vscode.window.showErrorMessage("An error has occured 2");
                 }else{
@@ -268,7 +265,38 @@ export class Highlighter extends vscode.TreeItem {
     }
 
 
+    MakeGitAttribute(stdoutGetProjPath:string) {
+        // -------------------------------- Make .gitattributes file for filter -------------------
+        const content = '* text eol=lf filter=reductScript';
 
+        try {
+            //Check existence of .gitattributes file
+            if (fs.existsSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes')) {
+                //file .gitattribute exists 
+                fs.readFile(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', 'utf8', (err:any, data:any) => {
+                if (err) {
+                    throw err;
+                //   return
+                }else{
+                    //write to the end of file
+                    if(!data.includes(content)){
+                        fs.appendFileSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', "\n"+content);
+                    }
+                }
+                });
+            }else{
+                //make new file
+                fs.writeFileSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', content);
+            }
+            console.log("done making .gitattributes file");
+            
+        } catch (err) {
+            console.log("error on add 'Make .gitattributes file for filter1'"+err);
+            vscode.window.showErrorMessage("An error has occured 0");
+            return false;
+        }
+        return true;
+    }
 
 
     delete() {
