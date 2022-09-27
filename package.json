@@ -23,12 +23,18 @@
 		"linemarker"
 	],
 	"icon": "GitHidder.png",
-	"activationEvents": [
-		"*"
-	],
+	"activationEvents": ["onView:keywordlist"],
 	"main": "./out/src/extension",
 	"contributes": {
 		"commands": [
+			{
+				"command": "GitHidder.OpenFile",
+				"title": "Open File",
+				"icon": {
+					"dark": "resources/OpenFileIconLight.svg",
+					"light": "resources/OpenFileIconLight.svg"
+				}
+			},
 			{
 				"command": "GitHidder.AddKeyword",
 				"title": "Add new password",
@@ -51,6 +57,14 @@
 				"icon": {
 					"dark": "resources/dark/cross.svg",
 					"light": "resources/light/cross.svg"
+				}
+			},
+			{
+				"command": "GitHidder.dummy",
+				"title": "Delete color/Reveal all",
+				"icon": {
+					"dark": "resources/green.svg",
+					"light": "resources/green.svg"
 				}
 			},
 			{
@@ -107,12 +121,18 @@
 			"GitHidder": [
 				{
 					"id": "keywordlist",
-					"name": "Password List"
+					"name": "Password List",
+					"when":"editorIsOpen" 
 				}
 			]
 		},
 		"menus": {
 			"view/item/context": [
+				{
+					"command": "GitHidder.OpenFile",
+					"when": "view == keywordlist && viewItem == path",
+					"group": "inline"
+				},
 				{
 					"command": "GitHidder.AddKeyword",
 					"when": "view == keywordlist && viewItem == highlighter",
@@ -146,19 +166,12 @@
 				{
 					"command": "GitHidder.EditKeyword",
 					"when": "view == keywordlist && viewItem == keyworditem",
-					"group": "keyworditem@2"
+					"group": "keyworditem@1"
 				},
 				{
 					"command": "GitHidder.DeleteKeyword",
 					"when": "view == keywordlist && viewItem == keyworditem",
-					"group": "keyworditem@3"
-				}
-			],
-			"view/title": [
-				{
-					"command": "GitHidder.AddColor",
-					"when": "view == keywordlist",
-					"group": "viewtitle@1"
+					"group": "keyworditem@2"
 				}
 			],
 			"editor/context": [

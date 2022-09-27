@@ -3,6 +3,9 @@ import { localeString } from './i18n';
 import { isArray } from 'util';
 import { Highlighter } from './Highlighter';
 import { KeywordItem } from './KeywordItem';
+import { Path } from './KeywordItem';
+import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
+import { runInThisContext } from 'vm';
 
 export type ColorInfo = {
 	name: string,
@@ -22,8 +25,8 @@ interface SaveList {
  *   + KeywordItem
  */
 export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-	_onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | null> = new vscode.EventEmitter<vscode.TreeItem | null>();
-	onDidChangeTreeData: vscode.Event<vscode.TreeItem | null> = this._onDidChangeTreeData.event;
+	_onDidChangeTreeData:vscode.EventEmitter<vscode.TreeItem|null|undefined|undefined> = new vscode.EventEmitter<vscode.TreeItem|null|undefined|undefined> ();
+	onDidChangeTreeData:vscode.Event<vscode.TreeItem|null|undefined|undefined >= this._onDidChangeTreeData.event;
 
 	data: Highlighter[] = [];
 
@@ -48,12 +51,14 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * 
 	 */
     hideshow(target: Highlighter) {
+		console.log("hideshow()")
 		var found: boolean = false;
 		const highlighter = this.data.find(highlighter => target === highlighter);
 		if (highlighter === undefined) {
 			return;
 		}
 		highlighter.turnonoff();
+		console.log("hideshow()-refresh")
 		this.refresh();
 	}
 	
@@ -93,14 +98,13 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		let highlighter = this.data.find(highlighter => highlighter.colortype.name.toLowerCase() === color.toLowerCase());
 		if (highlighter === undefined) {
 			var colorinfo = this._colorset.filter(value => value.name.toLowerCase() === color.toLowerCase())[0];
-			highlighter = new Highlighter(colorinfo, []);
+			highlighter = new Highlighter(this.context,colorinfo, [],"Start");
 			this.data.push(highlighter);
 		}
 		if (highlighter === undefined) {
 			return;
 		}
 		highlighter.add(keyword);
-
 		this.refresh();
 	}
 
@@ -108,6 +112,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * 
 	 */
 	setSelect() {
+		console.log("setSelect()")
 		this.data.forEach(highlighter => {
 			// if (highlighter.isActive) {
 				this.toggle(highlighter.colortype.name);
@@ -143,6 +148,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * Save the keywordlist to workspace settings.json.
 	 */
 	save() {
+		console.log("save()")
 		var config = vscode.workspace.getConfiguration("GitHidder");
 		var savelist: SaveList[] = [];
 		this.data.forEach(highlighter => {
@@ -164,11 +170,15 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		console.log("aaaaaaaaaaaaaaaaaaaa11111")
 		const GitHidderconfig = vscode.workspace.getConfiguration("GitHidder");
 		if (GitHidderconfig === undefined) {
+			console.log("11111111111111111111111111")
 			return false;
 		}
 		if (GitHidderconfig.has("savelist") === false) {
+			console.log("222222222222222222")
 			return false;
 		}
+
+
 		const savelist = <SaveList[]>GitHidderconfig.get("savelist");
 		const implementsSaveList = function (params: any): params is SaveList[] {
 			return (params !== null &&
@@ -183,16 +193,18 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 
 
 		if (!implementsSaveList(savelist)) {
+			console.log("44444444")
 			return false;
 			
 		}
 		savelist.forEach(obj => {
 			console.log("sfsdvfscvs")
-			let highlighter = new Highlighter(this._colorset.filter(value => value.name.toLowerCase() === obj.color.toLowerCase())[0], []);
+			let highlighter = new Highlighter(this.context,this._colorset.filter(value => value.name.toLowerCase() === obj.color.toLowerCase())[0], [],"");
 			obj.keyword.forEach(key => highlighter.add(key));
 			this.data.push(highlighter);
+			console.log("5555555555555")
 		});
-
+		// this.refresh()
 		return true;
 	}
 
@@ -212,7 +224,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			var targetItems: KeywordItem[] = [];
 			if (offset instanceof Highlighter) {
 				// backup and create new instance.
-				(<Highlighter>offset).keywordItems.forEach(keyword => targetItems.push(new KeywordItem(keyword.label)));
+				(<Highlighter>offset).keywordItems.forEach(keyword => targetItems.push(new KeywordItem(this.context,"",keyword.label)));
 				// delete selected instance.
 				this.data = this.data.filter(highlighter => highlighter.colortype !== (<Highlighter>offset).colortype);
 				// if ((<Highlighter>offset).isActive) {
@@ -222,7 +234,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			}
 			else if (offset instanceof KeywordItem) {
 				// backup and create new instance.
-				targetItems.push(new KeywordItem((<KeywordItem>offset).label));
+				targetItems.push(new KeywordItem(this.context,"",(<KeywordItem>offset).label));
 				// delete selected instance.
 				this.data.forEach(highlighter => {
 					highlighter.keywordItems = highlighter.keywordItems.filter(keyword => keyword.label !== (<KeywordItem>offset).label);
@@ -235,9 +247,11 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 				return (value.colortype === selectcolorinfo);
 			});
 			if (newhighlighter === undefined) {
-				newhighlighter = new Highlighter(selectcolorinfo, []);
+				newhighlighter = new Highlighter(this.context,selectcolorinfo, [],"Start");
 				this.data.push(newhighlighter);
 			}
+
+			
 
 			targetItems.forEach(keyword => {
 				if (newhighlighter !== undefined) {
@@ -247,38 +261,54 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			// if (newhighlighter !== undefined && wasActive) {
 			// 	this.changeActive(newhighlighter);
 			// }
-
+			console.log("change()-refresh")
 			this.refresh();
 		});
 	}
+
+/**
+	 * 
+	 * @param offset 
+	 */
+   OpenFile(offset: vscode.TreeItem) {
+	console.log("OpenFile")
+	if (offset instanceof Path) {
+		vscode.workspace.openTextDocument(offset.path).then(doc => {
+			vscode.window.showTextDocument(doc);
+		  });
+	}
+	
+   }
 
 	/**
 	 * 
 	 * @param offset 
 	 */
 	delete(offset: vscode.TreeItem) {
-		console.log(`Get value ${offset.label}.`);
 
+		console.log(`Get value delete ${offset.label}.`);
+
+		//delete color 
 		if (offset instanceof Highlighter) {
+			console.log(`Get value delete1 ${offset.label}.`);
+			
 			offset.delete();
-
 			this.data = this.data.filter(highlighter => highlighter !== offset);
-
-			// ------------------- Set color = red when user delete the color from list of colors
-			var select ="Red";	
-			var colorinfo = this._colorset.filter(value => select.toLowerCase() === select.toLowerCase())[0];
-			// if (this.data.findIndex(highlighter => highlighter.colortype === colorinfo) < 0) {
-			var newhighlighter = new Highlighter(colorinfo, []);
-			this.data.push(newhighlighter);
-			// this.changeActive(newhighlighter);
-			// ------------------- 
-
+	
+			// this.refresh();
+			this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"New"));
+			console.log("del-1()-refresh")
 			this.refresh();
-		}
+		
+
+		}//delete keyword from a color
 		else if (offset instanceof KeywordItem) {
+			console.log(`Get value delete2 ${offset.label}.`);
 			this.data.forEach(highlighter => {
-				highlighter.keywordItems = highlighter.keywordItems.filter(keyworditem => keyworditem !== offset);
+				highlighter.remove(offset);
+				// highlighter.keywordItems = highlighter.keywordItems.filter(keyworditem => keyworditem !== offset);
 			});
+			console.log("del-2()-refresh")
 			this.refresh();
 		}
 	}
@@ -288,16 +318,17 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param offset 
 	 */
 	add(offset?: vscode.TreeItem) {
+		console.log("add()")
 		if (!offset) {
 			// Add the color of the highlighter
 			vscode.window.showQuickPick(this._colorset.map(item => item.name)).then(select => {
 				if (select !== undefined) {
 					var colorinfo = this._colorset.filter(value => value.name.toLowerCase() === select.toLowerCase())[0];
 					if (this.data.findIndex(highlighter => highlighter.colortype === colorinfo) < 0) {
-						var newhighlighter = new Highlighter(colorinfo, []);
+						var newhighlighter = new Highlighter(this.context,colorinfo, [],"Start");
 						this.data.push(newhighlighter);
 						// this.changeActive(newhighlighter);
-
+						console.log("add-1()-refresh")
 						this.refresh();
 					}
 				}
@@ -320,26 +351,33 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	}
 
     edit(keywordItem: vscode.TreeItem) {
+		console.log("edit()")
 		if (keywordItem.contextValue !== "keyworditem") {
 			return;
 		}
 		let currentKeyword = keywordItem.label;
+		console.log("currentKeyword---->"+currentKeyword)
 		vscode.window.showInputBox({placeHolder: "Input keyword.", value: currentKeyword}).then(newKeyword => {
 			if (newKeyword === undefined) {
 				return;
 			}
 			if (!this.checkExistKeyword(newKeyword)) {
+				console.log("currentKeyword---->"+currentKeyword)
 				keywordItem.label = newKeyword;
+				console.log("edit()---->"+newKeyword)
 				this.refresh();
 			}
 		});
     }
+
+
 
 	/**
 	 * 
 	 * @param editors 
 	 */
 	refresh(editors?: vscode.TextEditor[]) {
+		console.log("refresh()")
 		this._onDidChangeTreeData.fire();
 		this.data.forEach(highlighter => highlighter.refresh(editors));
 	}
@@ -352,12 +390,13 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		console.log("aaaaaaaaaaaaaaaaaaaa33333")
 		// vscode.window.showInformationMessage('GitHidderTreeDataProvider constractor.');
 
+		this.context = context
 		var result = this.load();
 		if (!result) {
-			this.data.push(new Highlighter(this.ColorSet.Red, []));
+			this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"Start"));
 		}
 
-		
+		this.refresh();
 
 		// this.changeActive(this.data[0]);
 	}
@@ -366,30 +405,26 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * 
 	 * @param element 
 	 */
-	getTreeItem(element: KeywordItem | Highlighter): vscode.TreeItem | Thenable<vscode.TreeItem> {
+
+	getTreeItem(element: KeywordItem): vscode.TreeItem|Thenable<vscode.TreeItem> {
+		console.log("getTreeItem")
 		return element;
-	}
-	/**
-	 * 
-	 * @param element 
-	 */
-	getChildren(element?: KeywordItem | Highlighter | undefined): vscode.ProviderResult<vscode.TreeItem[]> {
-		if (!element) {
-			return this.data;
+	  }
+	
+	  getChildren(element?: KeywordItem|undefined): vscode.ProviderResult<vscode.TreeItem[]> {
+		console.log("getChildren")
+		if (element === undefined) {
+		  return this.data;
 		}
-		else if (element instanceof Highlighter) {
-			return element.keywordItems;
-		}
-		else {
-			return [];
-		}
-	}
+		return element.children;
+	  }
 
 	/**
 	 * 
 	 * @param keyword 
 	 */
 	private checkExistKeyword(keyword: string, showInfo = true): boolean {
+		console.log("checkExistKeyword")
 		let result: boolean = false;
 		this.data.forEach(highlighter => {
 			if (highlighter.checkExistKeyword(keyword)) {

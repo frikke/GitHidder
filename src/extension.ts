@@ -13,12 +13,15 @@ export function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.window.registerTreeDataProvider('keywordlist', GitHidderTreeDataProviderInstance);
     context.subscriptions.push(disposable);
 
+
+    disposable = vscode.commands.registerCommand('GitHidder.OpenFile', offset => GitHidderTreeDataProviderInstance.OpenFile(offset));
+    context.subscriptions.push(disposable);
     // 
     disposable = vscode.commands.registerCommand('GitHidder.AddColor', () => GitHidderTreeDataProviderInstance.add());
     context.subscriptions.push(disposable);
     disposable = vscode.commands.registerCommand('GitHidder.DeleteColor', offset => GitHidderTreeDataProviderInstance.delete(offset));
     context.subscriptions.push(disposable);
-    disposable = vscode.commands.registerCommand('GitHidder.AddKeyword', offset => GitHidderTreeDataProviderInstance.add(offset));
+    disposable = vscode.commands.registerCommand('GitHidder.AddKeyword', offset => GitHidderTreeDataProviderInstance.add(offset)); // add keyword with + in list list
     context.subscriptions.push(disposable);
     disposable = vscode.commands.registerCommand('GitHidder.DeleteKeyword', offset => GitHidderTreeDataProviderInstance.delete(offset));
     context.subscriptions.push(disposable);
@@ -34,7 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
     disposable = vscode.window.onDidChangeTextEditorSelection(() => GitHidderTreeDataProviderInstance.refresh());
     context.subscriptions.push(disposable);
-    disposable = vscode.commands.registerCommand('GitHidder.AddSelection', () => GitHidderTreeDataProviderInstance.setSelect());
+    disposable = vscode.commands.registerCommand('GitHidder.AddSelection', () => GitHidderTreeDataProviderInstance.setSelect()); // add keyword with right click
     context.subscriptions.push(disposable);
     disposable = vscode.workspace.onDidChangeConfiguration(() => GitHidderTreeDataProviderInstance.refresh());
     context.subscriptions.push(disposable);

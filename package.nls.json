@@ -11,16 +11,7 @@
     "GitHidder.warning.existkeyword": "The password already exists.",
     "GitHidder.information.done": "Done.",
     "GitHidder.error": "Error occurred.",
-    "GitHidder.keywordlist.add.title": "Add new password",
-    "GitHidder.keywordlist.delete.title": "Delete keyword",
-    "GitHidder.keywordlist.save.title": "Save list",
-    "GitHidder.keywordlist.addselect.title": "Hide this code",
 
-
-    "GitHidder.highlighter.add.title": "Add color",
-    "GitHidder.highlighter.delete.title": "Delete color/Reveal all",
-    "GitHidder.highlighter.change.title": "Change color",
-    
     "GitHidder.highlighter.editkeyword.title": "Edit",
     "GitHidder.highlighter.toggleRed.title": "Red",
     "GitHidder.highlighter.toggleGreen.title": "Green",

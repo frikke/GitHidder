@@ -15,15 +15,20 @@ export class Highlighter extends vscode.TreeItem {
     isActive: boolean;
     isVisible: boolean;
     private children: KeywordItem[];
+    iconPath : string;
+    context: vscode.ExtensionContext;
 
-    constructor(colortype: ColorInfo, children: KeywordItem[]) {
+    constructor(context:vscode.ExtensionContext,colortype: ColorInfo, children: KeywordItem[],state:string) {
         super(colortype.name, vscode.TreeItemCollapsibleState.Expanded);
         this.isActive = false;
         this.isVisible = true;
         this.colortype = colortype;
         this.children = children;
         this.iconPath = colortype.icon;
-        // --------------------------- Check git existance ------------------------------
+        this.context = context;
+        
+
+        // // --------------------------- Check git existance ------------------------------
         const CheckGit = exec('git --version',(error:any, stdout:any, stderr:any) => {
             if(stdout != `'git' is not recognized as an internal or external command,
             operable program or batch file.`){
@@ -39,32 +44,47 @@ export class Highlighter extends vscode.TreeItem {
                     filePath1=filePath.substr(0, lastSeen+1);
                 }
 
-                const child = exec('cd '+filePath1 + `&& git config filter.reductScript.clean  `,(error1:any, stdout1:any, stderr1:any) => {
-                    if(error1 !== null || stderr1!= "") {
-                        vscode.window.showErrorMessage("An error has occured 0");
-                    }else{
-                        if(stdout1 != "sed\n" && stdout1!=null){
-                            var re = /-e 's\/(.*?)\//g;
-                            var m;
-                            var i=0;
-                            do {
-                                m = re.exec(stdout1);
-                                if (m) {
-                                    m.forEach((element) => {
-                                        if(i%2 ==1){
-                                            this.addToList(element);
-                                        }
-                                        i++;
-                                    });
-                                }
-                            } while (m);
+                if(state == "Start"){
+                    const child = exec('cd '+filePath1 + ` && git config filter.GitHidderWords.clean  `,(error1:any, stdout1:any, stderr1:any) => {
+                        if(error1 !== null || stderr1!= "") {
+                            vscode.window.showErrorMessage("An error has occured 0");
+                        }else{
+                            if(stdout1 != "sed\n" && stdout1!=null){
+                                var re = /-e 's\/(.*?)\//g;
+                                var m;
+                                var i=0;
+                                do {
+                                    m = re.exec(stdout1);
+                                    if (m) {
+                                        m.forEach((element) => {
+                                            if(i%2 ==1){
+                                                // this.addToList(element);
+                                                this.FindPath(element);
+                                            }
+                                            i++;
+                                        });
+                                    }
+                                } while (m);
+                                this.refresh()
+                            }
                         }
-                    }
-                });    
+                    }); 
+                }else{
+                    const child = exec('cd '+filePath1 + ` && git config filter.GitHidderWords.clean  "sed" `,(error1:any, stdout1:any, stderr1:any) => {
+                        if(error1 !== null || stderr1!= "") {
+                            vscode.window.showErrorMessage("An error has occured 0");
+                        }else{
+                           this.deleteFiterFromAttributeFile(filePath1);
+                            console.log("deleting all done")
+                        }
+                    }); 
+                }
             }else{
                 vscode.window.showInformationMessage("You need to download and install Git with up to 2.0 version");
             }  
         });
+        
+      
     }
 
 
@@ -73,13 +93,10 @@ export class Highlighter extends vscode.TreeItem {
         return this.children;
     }
 
-
-
     set keywordItems(children: KeywordItem[]) {
         this.children = children;
         this.refresh();
     }
-
 
 
     clear() {
@@ -91,7 +108,8 @@ export class Highlighter extends vscode.TreeItem {
     remove(keyworditem: KeywordItem) {
         console.error("remove")
         var index = this.children.findIndex(value => value === keyworditem);
-        console.error("length--->"+this.children.length)
+
+        console.error("length--1->"+this.children.length)
         if (0 <= index) {
             console.error("remove1")
 
@@ -101,32 +119,28 @@ export class Highlighter extends vscode.TreeItem {
                 let lastSeen =currentfilePath.lastIndexOf("\\");
                 var currentFileDirectoryPath=currentfilePath.substr(0, lastSeen+1);
                 var currentfileName=currentfilePath.substr(lastSeen+1,currentfilePath.length)
-
                  // ----------------------------- Check changes ----------------------       git diff "C:\Users"
                  const child = exec('cd '+currentFileDirectoryPath + `&& git status `+currentfileName,(error1:any, stdout1:any, stderr1:any) => {
                     if(error1 !== null || stderr1!= "") {
                         vscode.window.showErrorMessage("An error has occured 1");
                     }else{
                         if(stdout1.includes(currentfileName)){
-                            console.error("Executing git command");
+                            console.log("Executing git command");
                              // ----------------------------- Remove string from list --------------------------------
                             this.children.splice(index, 1);
                             this.refresh();
-                            // ----------------------------- Execute git command filter --------------------------------
-                            const child1 = exec('cd '+currentFileDirectoryPath + `&& `+this.makeGitFilterStr(this.children), (error:any, stdout:any, stderr:any) => {
-                                if (error !== null) {
-                                    console.log(`exec error: ${error}`);
-                                }else{
-                                    console.log("done applying git config filter....");
-                                    console.log(`stdout: ${stdout}`);
-                                    console.log(`stderr: ${stderr}`);
-                                    console.error("length--->"+this.children.length)
-                                    //------------------------ Delete .gitattributes if list size is 0
-                                    // if(this.children.length == 0){
-                                    //     this.deleteAttributeFile(currentFileDirectoryPath)
-                                    // }
+
+                            let git_comm=this.Execute_git_command(currentFileDirectoryPath)
+
+                            if(!git_comm ){
+                                vscode.window.showInformationMessage("An error has occured");
+                            }else{
+                                if(this.children.length == 0){
+                                    console.log("delete filter from gitattribute")
+                                    this.deleteFiterFromAttributeFile(currentFileDirectoryPath);
                                 }
-                            });
+                            }
+                          
                         }else{
                             vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on Git");
                         }
@@ -136,17 +150,44 @@ export class Highlighter extends vscode.TreeItem {
         }
     }
 
-    // deleteAttributeFile(filePath:string) {
-    //     const child1 = exec('cd '+filePath + `&& git rev-parse --show-toplevel`, (error:any, stdout:any, stderr:any) => {
-    //         if (error != null) {
-    //             console.log("error on deleting .gitattributes file"+error);
-    //         }else{
-    //             fs.unlinkSync(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes');
-    //             console.log("done deleting .gitattributes file");
-    //         }
-    //     });
-    // }
 
+    deleteFiterFromAttributeFile(filePath:string) {
+        const child1 = exec('cd '+filePath + `&& git rev-parse --show-toplevel`, (error:any, stdout:any, stderr:any) => {
+            if (error != null) {
+                console.log("error on deleting .gitattributes file"+error);
+            }else{
+                fs.readFile(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', 'utf8', (err:any, data:any) => {
+                    if (err) {
+                        throw err;
+                    //   return
+                    }else{
+                        //write again the content of file to file
+                        data = data.replace('* text eol=lf filter=GitHidderWords','');
+                        fs.writeFileSync(stdout.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', data);
+                    }
+                });
+            }
+        });
+    }
+
+
+
+    Execute_git_command(currentFileDirectoryPath: string ){
+        // ----------------------------- Execute git command filter --------------------------------
+        const child1 = exec('cd '+currentFileDirectoryPath + ` && `+this.makeGitFilterStr(this.children), (error:any, stdout:any, stderr:any) => {
+            if (error !== null) {
+                console.log(`exec error --> ${error}`);
+                return false
+            }else{
+                console.log("done applying git config filter....");
+                console.log(`stdout: ${stdout}`);
+                console.log(`stderr: ${stderr}`);
+                console.error("length--2->"+this.children.length)
+                return true
+            }
+        });
+        return true;
+    }
 
 
 
@@ -179,16 +220,16 @@ export class Highlighter extends vscode.TreeItem {
                         filePath1=filePath.substr(0, lastSeen+1);
                         fileName=filePath.substr(lastSeen+1,filePath.length)
                         // filePath=filePath1.replace(/\\/g, "/")
-                        console.log("filePath ->"+filePath)
-                        console.log("filePath1 -> "+filePath1)
+                        // console.log("filePath ->"+filePath)
+                        // console.log("filePath1 -> "+filePath1)
                         // console.log("filePath2 -> "+filePath2)
-                        console.log("fileName -> "+fileName)
+                        // console.log("fileName -> "+fileName)
                     }
 
                     // // -------------------------------- Get project directory path1 -------------------
                     const child1 = exec('cd '+filePath1 + `&& git rev-parse --show-toplevel`, (errorGetProjPath:any, stdoutGetProjPath:any, stderrGetProjPath:any) => {
                         if (errorGetProjPath != null) {
-                            console.log("error on add 'Get root project directory path1'"+errorGetProjPath);
+                            // console.log("error on add 'Get root project directory path1'"+errorGetProjPath);
                             vscode.window.showErrorMessage("An error has occured 0");
                         }else{
                         // ----------------------------- Check changes ----------------------       git diff "C:\Users\...\."
@@ -197,56 +238,78 @@ export class Highlighter extends vscode.TreeItem {
                                 vscode.window.showErrorMessage("An error has occured 1");
                             }else{
                                 if(stdoutGitStatus.includes(fileName)){
-                                    console.error("Making file");
-                                    let status = this.MakeGitAttribute(stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\"))
-                                    console.error("Adding word to keywordList");
+                                    this.MakeGitAttribute(stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\"))
+                                    // ----------------------------- Adding word to keywordList --------------------------------
+                                    if (this.children.findIndex(value => value.label === keyword) < 0) {
+                                        // this.children.push(new KeywordItem(keyword));
+                                        this.children.push(new KeywordItem(this.context,keyword,filePath1+fileName));
+                                    }
+                                    // ----------------------------- Execute git command filter --------------------------------
+                                    let git_word=this.Execute_git_command(stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\"))
 
-                                    if(status){
-                                        // ----------------------------- Adding word to keywordList --------------------------------
-                                        if (this.children.findIndex(value => value.label === keyword) < 0) {
-                                            this.children.push(new KeywordItem(keyword));
+                                    if(!git_word ){
+                                        vscode.window.showInformationMessage("An error has occured git_word");
+                                    }else{
+                                       let git_path=this.makeGitFilterPath(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', ""),filePath1+fileName,keyword)
+                                        if(!git_path ){
+                                            vscode.window.showErrorMessage("An error has occured git_path");
                                         }
-                                        // ----------------------------- Execute git command filter --------------------------------
-                                        console.error("Executing git command");
-                                        const child1 = exec('cd '+stdoutGetProjPath.replace('\n', "").replace(/\//g, "\\") + ` && `+this.makeGitFilterStr(this.children),
-                                        (error:any, stdout:any, stderr:any) => {
-                                            if (error !== null) {
-                                                console.log(`exec error: ${error}`);
-                                            }else{
-                                                this.refresh();
-                                                console.log("done applying git config filter....");
-                                                console.log(`stdout: ${stdout}`);
-                                                console.log(`stderr: ${stderr}`);
-                                            }
-                                        });
                                     }
-                                    else{
-                                        vscode.window.showErrorMessage("An error has occurred while making .gitattribute file");
-                                    }
+                                  
                                 }else{
                                     vscode.window.showInformationMessage("First you need to make at least one change to apply the changes on Git");
+                                    // this.children.splice(testRowIndex, 1);
+                                    // this.refresh();
+                                    return;
                                 }
                             }
                         });
                         }
                     });
 
+
                 }else if(error !== null || stderr!= ""){
                     vscode.window.showErrorMessage("An error has occured 2");
+                    return;
+                    
                 }else{
+                    // this.children.splice(testRowIndex, 1);
+                    // this.refresh();
                     vscode.window.showInformationMessage("You need to download and install Git with up to 2.0 version");
+                    return;
                 }
             });
-
+           
         }
+
+        
+
         const forceVisible = vscode.workspace.getConfiguration('GitHidder').get('forcevisible', true);
         if (forceVisible && !this.isVisible) {
             this.isVisible = true;
         }
+
+
+        // if (keyword instanceof KeywordItem) {
+        //     console.log("11111111")
+        //     if (this.children.findIndex(value => value.label === keyword.label) < 0) {
+        //         this.children.push(keyword);
+        //     }
+        // }
+        // else if (typeof keyword === 'string' && 0 < keyword.length) {
+        //     if (this.children.findIndex(value => value.label === keyword) < 0) {
+        //         this.children.push(new KeywordItem(keyword));
+        //     }
+        // }
+        // const forceVisible = vscode.workspace.getConfiguration('multicolorhighlighter').get('forcevisible', true);
+        // if (forceVisible && !this.isVisible) {
+        //     this.isVisible = true;
+        // }
     }
 
 
-    addToList(keyword: string | KeywordItem) {
+
+    addToList(keyword: string | KeywordItem,path:string) {
         if (keyword instanceof KeywordItem) {
             if (this.children.findIndex(value => value.label === keyword.label) < 0) {
                 this.children.push(keyword);
@@ -254,8 +317,11 @@ export class Highlighter extends vscode.TreeItem {
         }
         else if (typeof keyword === 'string' && 0 < keyword.length) {
             if (this.children.findIndex(value => value.label === keyword) < 0) {
-                this.children.push(new KeywordItem(keyword));
-                this.refresh();
+                this.children.push(new KeywordItem(this.context,keyword,path));
+            
+               
+                  
+                
             }
         }                      
         const forceVisible = vscode.workspace.getConfiguration('GitHidder').get('forcevisible', true);
@@ -265,24 +331,25 @@ export class Highlighter extends vscode.TreeItem {
     }
 
 
+
     MakeGitAttribute(stdoutGetProjPath:string) {
         // -------------------------------- Make .gitattributes file for filter -------------------
-        const content = '* text eol=lf filter=reductScript';
+        const content = '* text eol=lf filter=GitHidderWords \nfilter=GitHidderPaths';
 
         try {
             //Check existence of .gitattributes file
             if (fs.existsSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes')) {
                 //file .gitattribute exists 
                 fs.readFile(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', 'utf8', (err:any, data:any) => {
-                if (err) {
-                    throw err;
-                //   return
-                }else{
-                    //write to the end of file
-                    if(!data.includes(content)){
-                        fs.appendFileSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', "\n"+content);
+                    if (err) {
+                        throw err;
+                    //   return
+                    }else{
+                        //write to the end of file
+                        if(!data.includes(content)){
+                            fs.appendFileSync(stdoutGetProjPath.replace(/\\/g, "/").replace('\n', "") +'/.gitattributes', "\n"+content);
+                        }
                     }
-                }
                 });
             }else{
                 //make new file
@@ -293,9 +360,9 @@ export class Highlighter extends vscode.TreeItem {
         } catch (err) {
             console.log("error on add 'Make .gitattributes file for filter1'"+err);
             vscode.window.showErrorMessage("An error has occured 0");
-            return false;
+            return;
         }
-        return true;
+        return;
     }
 
 
@@ -333,15 +400,97 @@ export class Highlighter extends vscode.TreeItem {
     // }
 
 
-    makeGitFilterStr(KeywordList:KeywordItem[] = []) {
-        var allFilterStr=` git config filter.reductScript.clean "sed`
-        var str="";
-        KeywordList.forEach(keyword =>{
-            str = str +" -e 's/"+keyword.label+"/"+"XXXXXXX-YOUR-PASSWORD-XXXXXXX/g'"
+makeGitFilterStr(KeywordList:KeywordItem[] = []) {
+    var allFilterStr=` git config filter.GitHidderWords.clean "sed`
+    var str="";
+    KeywordList.forEach(keyword =>{
+        str = str +" -e 's/"+keyword.label+"/"+"XXXXXXX-YOUR-PASSWORD-XXXXXXX/g'"
+    });
+    allFilterStr=allFilterStr+str+'"'
+    return allFilterStr;
+}
+
+
+
+makeGitFilterPath(stdoutGetProjPath:string,filePath:string,keyword:string,) {
+    console.log("makeGitFilterPath()");
+    const child1 = exec('cd '+stdoutGetProjPath + ` && git config filter.GitHidderPaths.clean `,(errorGitPaths:any, stdoutGitPaths:any, stderrGitPaths:any) => {
+        if(errorGitPaths !== null || stderrGitPaths!= "") {
+            return false;
+        }
+        let new_path=stdoutGitPaths+" "+keyword+"|"+filePath+"|";
+        new_path=new_path.replace('\n', "")
+        const child2 = exec('cd '+stdoutGetProjPath + ` && git config filter.GitHidderPaths.clean "`+new_path+`" `,(errorGitPathsExecute:any, stdoutGitPathsExecute:any, stderrGitPathsExecute:any) => {
+           if(errorGitPathsExecute !== null && stderrGitPathsExecute != ""){
+                console.log("errorGitPathsExecute->"+errorGitPathsExecute);
+                console.log("stderrGitPathsExecute->"+stderrGitPathsExecute);
+                console.log("stdoutGitPathsExecutes->"+stdoutGitPathsExecute);
+                return false;
+            }else{
+                return true;
+            }
+            // console.log("xxxxxx");
+            // return
         });
-        allFilterStr=allFilterStr+str+'"'
-        return allFilterStr;
+    });
+
+    return true;
+    
+ }
+
+
+
+
+FindPath(keyword:string) {
+
+    console.log("FindPath()-->"+keyword)
+    var filePath = "";  //path with "/"
+    var filePath1 = "";  //path with "\"
+
+    var editor = vscode.window.activeTextEditor;
+
+    if (editor) {
+        filePath = editor.document.fileName;
+        let lastSeen =filePath.lastIndexOf("\\");
+        filePath1=filePath.substr(0, lastSeen+1);
     }
+
+    // -------------------------------- Get project directory path1 -------------------
+    const child1 = exec('cd '+filePath1 + ` && git rev-parse --show-toplevel `,(errorGitProjDir:any, stdoutGitProjDir:any, stderrGitProjDir:any) => {
+        if(errorGitProjDir !== null || stderrGitProjDir!= "") {
+            return "";
+        }else{
+            const child2 = exec('cd '+stdoutGitProjDir.replace(/\\/g, "/").replace('\n', "") + ` && git config filter.GitHidderPaths.clean`,(errorGitPathsExecute:any, stdoutGitPathsExecute:any, stderrGitPathsExecute:any) => {
+                if(errorGitPathsExecute !== null && stderrGitPathsExecute != ""){
+                     console.log("errorGitPathsExecute->"+errorGitPathsExecute);
+                     console.log("stderrGitPathsExecute->"+stderrGitPathsExecute);
+                     console.log("stdoutGitPathsExecutes->"+stdoutGitPathsExecute);
+                     return ;
+                 }else{
+                    // let lastSeen =stdoutGitPathsExecute.lastIndexOf(keyword)-1;
+                    console.log("stdoutGitPathsExecute-->"+stdoutGitPathsExecute);
+                    // stdoutGitPathsExecute = stdoutGitPathsExecute.replace(/\\/g, "/").replace('\n', "");
+                 
+                    let indexOfKeyword = stdoutGitPathsExecute.indexOf(keyword);
+                    let substring = stdoutGitPathsExecute.substring(indexOfKeyword,stdoutGitPathsExecute.length);
+                    let path = substring.split(keyword+'|').pop().split("|")[0];
+
+                    this.addToList(keyword,path)
+                 
+                    return ;
+                   
+                 }
+             });
+        }
+       
+    });
+
+    return ;
+    
+ }
+
+
+
 
 
 
@@ -403,18 +552,33 @@ export class Highlighter extends vscode.TreeItem {
                 const text = editor.document.getText();
                 const targets: vscode.DecorationOptions[] = [];
                 let match: number = -1;
-                this.children.forEach(keyworditem => {
-                    while (0 <= (match = text.indexOf(keyworditem.label, match + 1)) && counter < limit) {
-                        counter++;
-                        const startPos = editor.document.positionAt(match);
-                        const endPos = editor.document.positionAt(match + keyworditem.label.length);
-                        targets.push({ range: new vscode.Range(startPos, endPos) });
-                    }
-                    if (limit <= counter) {
-                        // Exit foreach loop.
-                        return;
-                    }
-                });
+
+                var currentTextEditor = vscode.window.activeTextEditor;
+
+                var currentTextEditorPath=""
+                if (currentTextEditor) {
+                    currentTextEditorPath = currentTextEditor.document.fileName;
+                   
+                    this.children.forEach(keyworditem => {
+                        // console.log("currentTextEditorPath-->"+currentTextEditorPath);
+                        // console.log("keyworditemPath-->"+keyworditem.getKeywordPath());
+                        if(keyworditem.getKeywordPath() == currentTextEditorPath ){
+                            while (0 <= (match = text.indexOf(keyworditem.label, match + 1)) && counter < limit) {
+                                counter++;
+                                const startPos = editor.document.positionAt(match);
+                                const endPos = editor.document.positionAt(match + keyworditem.label.length);
+                                targets.push({ range: new vscode.Range(startPos, endPos) });
+                            }
+                            if (limit <= counter) {
+                                // Exit foreach loop.
+                                return;
+                            }
+                        }
+                     
+                    });
+                }
+
+               
                 if (limit <= counter) {
                     vscode.window.showErrorMessage(localeString('GitHidder.warning.upperlimit.1') +
                         limit.toString() +
