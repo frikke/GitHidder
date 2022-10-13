@@ -3,27 +3,31 @@
 	"displayName": "GitHidder",
 	"description": "Highlighting keywords in the color you want.",
 	"version": "1.1.5",
-	"publisher": "456ken",
+	"publisher": "KonstantinosKol",
 	"engines": {
 		"vscode": "^1.36.0"
 	},
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/456ken/Highlighter-vscode"
+		"url": "https://github.com/KonstantinosKol/GitHidder"
 	},
 	"categories": [
 		"Other"
 	],
 	"keywords": [
-		"highlight",
-		"highlighter",
-		"mark",
 		"marker",
-		"linemarker"
+		"linemarker",
+		"Git",
+		"hide",
+		"git",
+		"password",
+		"hidder"
 	],
-	"icon": "GitHidder.png",
-	"activationEvents": ["onView:keywordlist"],
+	"icon": "Logo-1.png",
+	"activationEvents": [
+		"onView:keywordlist"
+	],
 	"main": "./out/src/extension",
 	"contributes": {
 		"commands": [
@@ -77,7 +81,7 @@
 			},
 			{
 				"command": "GitHidder.AddSelection",
-				"title": "Hide this code"
+				"title": "Hide/Reveal this text"
 			},
 			{
 				"command": "GitHidder.EditKeyword",
@@ -113,7 +117,7 @@
 				{
 					"id": "GitHidder",
 					"title": "%GitHidder.title%",
-					"icon": "media/mch.svg"
+					"icon": "media/Git_Hidder_Logo.svg"
 				}
 			]
 		},
@@ -121,8 +125,7 @@
 			"GitHidder": [
 				{
 					"id": "keywordlist",
-					"name": "Password List",
-					"when":"editorIsOpen" 
+					"name": "Password List"
 				}
 			]
 		},
@@ -236,7 +239,8 @@
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"dependencies": {
-		"minimist": "^1.2.5"
+		"minimist": "^1.2.5",
+		"node-async-exec": "^1.2.0"
 	},
 	"devDependencies": {
 		"@types/mocha": "^2.2.42",

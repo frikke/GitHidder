@@ -4,8 +4,7 @@ import { isArray } from 'util';
 import { Highlighter } from './Highlighter';
 import { KeywordItem } from './KeywordItem';
 import { Path } from './KeywordItem';
-import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
-import { runInThisContext } from 'vm';
+var {exec} = require('child_process') ;
 
 export type ColorInfo = {
 	name: string,
@@ -29,6 +28,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	onDidChangeTreeData:vscode.Event<vscode.TreeItem|null|undefined|undefined >= this._onDidChangeTreeData.event;
 
 	data: Highlighter[] = [];
+	currentProjectPath:string=""
 
 	_colorset: ColorInfo[] = [
 		{ name: 'Red'   , code: '#FF0000', icon: this.context.asAbsolutePath('resources/red.svg'), hideicon: this.context.asAbsolutePath('resources/transparence.svg') },
@@ -52,7 +52,6 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 */
     hideshow(target: Highlighter) {
 		console.log("hideshow()")
-		var found: boolean = false;
 		const highlighter = this.data.find(highlighter => target === highlighter);
 		if (highlighter === undefined) {
 			return;
@@ -67,6 +66,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param arg0 
 	 */
 	toggle(color: string) {
+		console.log("toggle()")
 		if (vscode.window.activeTextEditor === undefined) {
 			return;
 		}
@@ -79,33 +79,47 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 
 		// Check keyword existence.
 		let deleteOperation: boolean = false;
+
 		this.data.forEach(highlighter => {
-			const found = highlighter.keywordItems.find(value => value.label === keyword);
-			if (found !== undefined && highlighter.colortype.name.toLowerCase() === color.toLowerCase()) {
-				highlighter.remove(found);
-				deleteOperation = true;
-			}
-			else if (found !== undefined) {
-				highlighter.remove(found);
+			var currentTextEditor = vscode.window.activeTextEditor;
+			
+			var currentTextEditorPath=""
+			if (currentTextEditor) {
+				currentTextEditorPath = currentTextEditor.document.fileName;
+				currentTextEditorPath = currentTextEditorPath.charAt(0).toUpperCase() + currentTextEditorPath.slice(1)
+				highlighter.keywordItems.forEach(KeywordItem => {
+					if(keyword == KeywordItem.label){
+						if(KeywordItem.getKeywordPath() == currentTextEditorPath ){
+							highlighter.remove(KeywordItem).then(function () {}).catch(function () {
+								vscode.window.showErrorMessage("An error has occurred while trying reveal a keyword");
+								return
+							});
+							deleteOperation = true;
+							this.refresh();
+							this.refresh();
+							return;
+						}
+					}
+				});
+
 			}
 		});
-		if (deleteOperation) {
-			this.refresh();
-			return;
-		}
 
-		// Add keyword to target highlighter.
-		let highlighter = this.data.find(highlighter => highlighter.colortype.name.toLowerCase() === color.toLowerCase());
-		if (highlighter === undefined) {
-			var colorinfo = this._colorset.filter(value => value.name.toLowerCase() === color.toLowerCase())[0];
-			highlighter = new Highlighter(this.context,colorinfo, [],"Start");
-			this.data.push(highlighter);
+		if(deleteOperation == false){
+			let highlighter = this.data.find(highlighter => highlighter.colortype.name.toLowerCase() === color.toLowerCase());
+			if (highlighter === undefined) {
+				return;
+			}
+			// highlighter.add(keyword,"");
+			highlighter.add(keyword,"").then(function () {}).catch(function () {
+				vscode.window.showErrorMessage("An error has occurred while trying hide a keyword");
+				return
+			});
+
+			this.refresh();
+			this.refresh();
 		}
-		if (highlighter === undefined) {
-			return;
-		}
-		highlighter.add(keyword);
-		this.refresh();
+		
 	}
 
 	/**
@@ -158,23 +172,17 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			});
 		});
 		config.update("savelist", savelist, vscode.ConfigurationTarget.Workspace).then(
-			() => vscode.window.showInformationMessage(localeString('GitHidder.information.done')),
-			(reason) => vscode.window.showErrorMessage(localeString('GitHidder.error') + "\n" + reason)
+			() => vscode.window.showInformationMessage('Done'),
+			(reason) => vscode.window.showErrorMessage('Error occurred' + "\n" + reason)
 		);
 	}
 
-	/**
-	 * Load the keywordlist from workspace settings.json.
-	 */
 	load(): boolean {
-		console.log("aaaaaaaaaaaaaaaaaaaa11111")
 		const GitHidderconfig = vscode.workspace.getConfiguration("GitHidder");
 		if (GitHidderconfig === undefined) {
-			console.log("11111111111111111111111111")
 			return false;
 		}
 		if (GitHidderconfig.has("savelist") === false) {
-			console.log("222222222222222222")
 			return false;
 		}
 
@@ -193,16 +201,14 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 
 
 		if (!implementsSaveList(savelist)) {
-			console.log("44444444")
 			return false;
 			
 		}
 		savelist.forEach(obj => {
 			console.log("sfsdvfscvs")
-			let highlighter = new Highlighter(this.context,this._colorset.filter(value => value.name.toLowerCase() === obj.color.toLowerCase())[0], [],"");
-			obj.keyword.forEach(key => highlighter.add(key));
+			let highlighter = new Highlighter(this.context,this._colorset.filter(value => value.name.toLowerCase() === obj.color.toLowerCase())[0], [],"",this.currentProjectPath);
+			obj.keyword.forEach(key => highlighter.add(key,""));
 			this.data.push(highlighter);
-			console.log("5555555555555")
 		});
 		// this.refresh()
 		return true;
@@ -213,56 +219,35 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param offset 
 	 */
 	change(offset: vscode.TreeItem) {
-		console.log(`Get value ${offset.label}.`);
-		// Select color in QuickPick.
+		console.error("change()")
+		// console.log(`Get value ${offset.label}.`);
 		vscode.window.showQuickPick(this._colorset.map(item => item.name)).then(select => {
 			if (select === undefined) {
 				return;
 			}
 
 			// var wasActive = false;
-			var targetItems: KeywordItem[] = [];
 			if (offset instanceof Highlighter) {
-				// backup and create new instance.
-				(<Highlighter>offset).keywordItems.forEach(keyword => targetItems.push(new KeywordItem(this.context,"",keyword.label)));
-				// delete selected instance.
-				this.data = this.data.filter(highlighter => highlighter.colortype !== (<Highlighter>offset).colortype);
-				// if ((<Highlighter>offset).isActive) {
-				// 	wasActive = true;
-				// }
-				(<Highlighter>offset).delete();
-			}
-			else if (offset instanceof KeywordItem) {
-				// backup and create new instance.
-				targetItems.push(new KeywordItem(this.context,"",(<KeywordItem>offset).label));
-				// delete selected instance.
-				this.data.forEach(highlighter => {
-					highlighter.keywordItems = highlighter.keywordItems.filter(keyword => keyword.label !== (<KeywordItem>offset).label);
-				});
-			}
-
-			var selectcolorinfo = this._colorset.filter(value => value.name === select)[0];
-			// Get a color to add keywords.
-			var newhighlighter = this.data.find(value => {
-				return (value.colortype === selectcolorinfo);
-			});
-			if (newhighlighter === undefined) {
-				newhighlighter = new Highlighter(this.context,selectcolorinfo, [],"Start");
-				this.data.push(newhighlighter);
+	
+				this.data.forEach(highlighter =>{
+					if(select == 'Red'){
+						highlighter.changeColor(this.ColorSet.Red)
+					}
+					else if(select == 'Green'){
+						highlighter.changeColor(this.ColorSet.Green)
+					}else if(select == 'Blue'){
+						highlighter.changeColor(this.ColorSet.Blue)
+					}else if(select == 'Yellow'){
+						highlighter.changeColor(this.ColorSet.Yellow)
+					}else if(select == 'Pink'){
+						highlighter.changeColor(this.ColorSet.Pink)
+					}else if(select == 'Cyan'){
+						highlighter.changeColor(this.ColorSet.Cyan)
+					}
+				})
+				this.refresh()
 			}
 
-			
-
-			targetItems.forEach(keyword => {
-				if (newhighlighter !== undefined) {
-					newhighlighter.add(keyword);
-				}
-			});
-			// if (newhighlighter !== undefined && wasActive) {
-			// 	this.changeActive(newhighlighter);
-			// }
-			console.log("change()-refresh")
-			this.refresh();
 		});
 	}
 
@@ -275,7 +260,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	if (offset instanceof Path) {
 		vscode.workspace.openTextDocument(offset.path).then(doc => {
 			vscode.window.showTextDocument(doc);
-		  });
+		});
 	}
 	
    }
@@ -288,27 +273,39 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 
 		console.log(`Get value delete ${offset.label}.`);
 
-		//delete color 
+		//delete color / reveal all
 		if (offset instanceof Highlighter) {
-			console.log(`Get value delete1 ${offset.label}.`);
+			vscode.window.showInformationMessage("Do you want reveal all the keywords from to Git?", "Yes", "No")
+			.then(answer => {
+				if (answer === "Yes") {
+					console.log(`Get value delete1 ${offset.label}.`);
 			
-			offset.delete();
-			this.data = this.data.filter(highlighter => highlighter !== offset);
-	
-			// this.refresh();
-			this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"New"));
-			console.log("del-1()-refresh")
-			this.refresh();
-		
+					offset.delete();
+					this.data = this.data.filter(highlighter => highlighter !== offset);
+			
+					//make new Highlighter
+					this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"New",this.currentProjectPath));
+					console.log("del-1()-refresh")
+					this.refresh();
+					this.refresh();
+					return;
+				}else{
+					return;
+				}
+			})
+			
 
 		}//delete keyword from a color
 		else if (offset instanceof KeywordItem) {
 			console.log(`Get value delete2 ${offset.label}.`);
 			this.data.forEach(highlighter => {
-				highlighter.remove(offset);
+				highlighter.remove(offset).then(function () { }).catch(function () {
+                    vscode.window.showErrorMessage("An error has occurred while trying reveal a keyword");
+                });
 				// highlighter.keywordItems = highlighter.keywordItems.filter(keyworditem => keyworditem !== offset);
 			});
 			console.log("del-2()-refresh")
+			this.refresh();
 			this.refresh();
 		}
 	}
@@ -325,10 +322,11 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 				if (select !== undefined) {
 					var colorinfo = this._colorset.filter(value => value.name.toLowerCase() === select.toLowerCase())[0];
 					if (this.data.findIndex(highlighter => highlighter.colortype === colorinfo) < 0) {
-						var newhighlighter = new Highlighter(this.context,colorinfo, [],"Start");
+						var newhighlighter = new Highlighter(this.context,colorinfo, [],"Start",this.currentProjectPath);
 						this.data.push(newhighlighter);
 						// this.changeActive(newhighlighter);
-						console.log("add-1()-refresh")
+						// console.log("add-1()-refresh")
+						this.refresh();
 						this.refresh();
 					}
 				}
@@ -336,38 +334,100 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		}
 		else if (offset instanceof Highlighter) {
 			// Add a keyword.
-			vscode.window.showInputBox({ placeHolder: "Input keyword." }).then(keyword => {
+			vscode.window.showInputBox({ placeHolder: "Input keyword." }).then(async keyword => {
 				if (keyword === undefined) {
 					return;
+				}else{
+					let file = await vscode.window.showOpenDialog({
+						filters: {
+							'All files (*.*)': ['*']
+						  },
+						  canSelectFolders: false,
+						  canSelectFiles: true,
+						  canSelectMany: false,
+						  openLabel: 'Select file',
+					  });
+					  if (!file || file.length < 1) {
+						return;
+					  }else{
+						let filePath = file[0].fsPath.replace(/\//g, "\\").replace('\n', "") 
+						filePath = filePath.charAt(0).toUpperCase() + filePath.slice(1)
+						if(filePath.includes(this.currentProjectPath)){
+							if (this.checkExistKeyword(keyword,filePath)) {
+								vscode.window.showInformationMessage("This keyword with this file already exists");
+								return;
+							}else{
+								offset.add(keyword,filePath);
+								offset.refresh();
+								this.refresh();
+								this.refresh();
+							}
+						}else{
+							vscode.window.showInformationMessage("This file doesn't belong in this repository");
+							return;
+						}
+						
+					
+					  }
 				}
-				if (this.checkExistKeyword(keyword)) {
-					return;
-				}
-				offset.add(keyword);
-				offset.refresh();
-				this.refresh();
 			});
 		}
 	}
+	/**
+	 * 
+	 * @param keywordItem 
+	 */
 
-    edit(keywordItem: vscode.TreeItem) {
+    edit(keywordItem?: vscode.TreeItem) {
 		console.log("edit()")
-		if (keywordItem.contextValue !== "keyworditem") {
-			return;
+		if (!keywordItem) {
+		}	else if (keywordItem instanceof Highlighter) {
+
+		}else if (keywordItem instanceof KeywordItem) {
+
+			let currentKeyword =keywordItem.label;
+			vscode.window.showInputBox({placeHolder: "Input keyword.", value: currentKeyword}).then(newKeyword => {
+				if (newKeyword === undefined) {
+					return;
+				}
+				if (!this.checkExistKeyword(newKeyword,keywordItem.path)) {
+
+					console.log("currentKeyword---->"+currentKeyword)
+					console.log("newKeyword---->"+newKeyword)
+					this.data.forEach(async highlighter => {
+						console.log("bike1")
+						let index = highlighter.keywordItems.findIndex(value => value.label === currentKeyword);
+						if(index >= 0){
+							console.log("highlighter.keywordItems[index]-->"+highlighter.keywordItems[index].label+"<--currentKeyword->"+currentKeyword+"<---")
+							if(highlighter.keywordItems[index].label == currentKeyword){
+								console.log("bike2")
+								await highlighter.remove(keywordItem).then(function () {
+									highlighter.add(newKeyword,keywordItem.path).then(function () {}).catch(function () {
+										vscode.window.showErrorMessage("An error occurred while adding keyword");
+									});
+								}).catch(function () {
+									vscode.window.showErrorMessage("An error occurred while deleting keyword");
+								});
+
+							}
+						}
+						
+						// highlighter.keywordItems = highlighter.keywordItems.filter(keyworditem => keyworditem !== offset);
+					});
+
+					this.refresh();
+					this.refresh();
+				}
+			});
+		}else{
+			console.log("44444()")
 		}
-		let currentKeyword = keywordItem.label;
-		console.log("currentKeyword---->"+currentKeyword)
-		vscode.window.showInputBox({placeHolder: "Input keyword.", value: currentKeyword}).then(newKeyword => {
-			if (newKeyword === undefined) {
-				return;
-			}
-			if (!this.checkExistKeyword(newKeyword)) {
-				console.log("currentKeyword---->"+currentKeyword)
-				keywordItem.label = newKeyword;
-				console.log("edit()---->"+newKeyword)
-				this.refresh();
-			}
-		});
+		
+		// if (keywordItem.contextValue !== "keyworditem") {
+		// 	return;
+		// }
+
+		
     }
 
 
@@ -377,7 +437,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param editors 
 	 */
 	refresh(editors?: vscode.TextEditor[]) {
-		console.log("refresh()")
+		console.log("refresh(-1-)")
 		this._onDidChangeTreeData.fire();
 		this.data.forEach(highlighter => highlighter.refresh(editors));
 	}
@@ -387,16 +447,51 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * @param context 
 	 */
 	constructor(private context: vscode.ExtensionContext) {
-		console.log("aaaaaaaaaaaaaaaaaaaa33333")
 		// vscode.window.showInformationMessage('GitHidderTreeDataProvider constractor.');
 
-		this.context = context
-		var result = this.load();
-		if (!result) {
-			this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"Start"));
-		}
 
-		this.refresh();
+		if(vscode.workspace.workspaceFolders == undefined) {
+			vscode.window.showInformationMessage("You need to open a project first");
+		}else{
+			//Path of current oriject directory
+			let path = vscode.workspace.workspaceFolders[0].uri.fsPath
+			path= path.charAt(0).toUpperCase() + path.slice(1)
+
+			exec('git --version',(error:any, stdout:any, stderr:any) => {
+				console.log("error->"+error);
+				console.log("stderr->"+stderr);
+				console.log("stdout->"+stdout);
+				if(error !== null && stderr != ""){
+					vscode.window.showInformationMessage("You need to download and install Git with up to 2.0 version");
+				}else{
+					if(stdout == `'git' is not recognized as an internal or external command,
+					operable program or batch file.`){
+						vscode.window.showInformationMessage("You need to download and install Git with up to 2.0 version");
+					}
+					else{   
+						exec('cd '+path + ` && git rev-parse --show-toplevel`, (error:any, stdoutProjectDirectory:any, stderr:any) => {
+							if (error != null && stderr!="") {
+								vscode.window.showInformationMessage("An error occurred while trying to identify current directory");
+							}else{
+								if(stdoutProjectDirectory.replace(/\//g, "\\").replace('\n', "") == path){
+								this.currentProjectPath = path;
+								this.context = context
+								var result = this.load();
+								if (!result) {
+									this.data.push(new Highlighter(this.context,this.ColorSet.Red, [],"Start",this.currentProjectPath));
+									this.refresh();
+									this.refresh();
+								}
+			
+								}else{
+									vscode.window.showInformationMessage("This directory isn't a Git repository");
+								}
+							}
+						})
+					}
+				}
+			})
+		}
 
 		// this.changeActive(this.data[0]);
 	}
@@ -407,12 +502,10 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 */
 
 	getTreeItem(element: KeywordItem): vscode.TreeItem|Thenable<vscode.TreeItem> {
-		console.log("getTreeItem")
 		return element;
 	  }
 	
 	  getChildren(element?: KeywordItem|undefined): vscode.ProviderResult<vscode.TreeItem[]> {
-		console.log("getChildren")
 		if (element === undefined) {
 		  return this.data;
 		}
@@ -423,19 +516,21 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	 * 
 	 * @param keyword 
 	 */
-	private checkExistKeyword(keyword: string, showInfo = true): boolean {
-		console.log("checkExistKeyword")
+	private checkExistKeyword(keyword: string, path:string,showInfo = true): boolean {
+		console.log("GitHidderTree checkExistKeyword()")
 		let result: boolean = false;
 		this.data.forEach(highlighter => {
-			if (highlighter.checkExistKeyword(keyword)) {
+			if (highlighter.checkExistKeyword(keyword,path)) {
 				result = true;
 				return;
 			}
 		});
 		if (result && showInfo) {
-			vscode.window.showInformationMessage(localeString('GitHidder.warning.existkeyword'));
+			vscode.window.showInformationMessage('This keyword already exists.');
 		}
 		return result;
 	}
+
+
 }
 

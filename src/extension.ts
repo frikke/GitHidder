@@ -7,7 +7,6 @@ import { GitHidderTreeDataProvider } from './GitHidderTree';
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    // vscode.window.showInformationMessage("extensinon activate.");
 
     const GitHidderTreeDataProviderInstance = new GitHidderTreeDataProvider(context);
     let disposable = vscode.window.registerTreeDataProvider('keywordlist', GitHidderTreeDataProviderInstance);
@@ -27,10 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
     disposable = vscode.commands.registerCommand('GitHidder.ChangeColor', offset => GitHidderTreeDataProviderInstance.change(offset));
     context.subscriptions.push(disposable);
-    disposable = vscode.commands.registerCommand('GitHidder.SaveList', () => GitHidderTreeDataProviderInstance.save());
-    context.subscriptions.push(disposable);
-    // disposable = vscode.commands.registerCommand('GitHidder.SetCurrent', offset => GitHidderTreeDataProviderInstance.changeActive(offset));
-    // context.subscriptions.push(disposable);
     
     // 
     disposable = vscode.window.onDidChangeVisibleTextEditors(editors => GitHidderTreeDataProviderInstance.refresh(editors));
@@ -41,8 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
     disposable = vscode.workspace.onDidChangeConfiguration(() => GitHidderTreeDataProviderInstance.refresh());
     context.subscriptions.push(disposable);
-    // disposable = vscode.commands.registerCommand('GitHidder.HideShow', highlighter => GitHidderTreeDataProviderInstance.hideshow(highlighter));
-    // context.subscriptions.push(disposable);
     disposable = vscode.commands.registerCommand('GitHidder.EditKeyword', keyword => GitHidderTreeDataProviderInstance.edit(keyword));
 
     //
