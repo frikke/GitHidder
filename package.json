@@ -26,17 +26,25 @@
 	],
 	"icon": "Logo-1.png",
 	"activationEvents": [
-		"onView:keywordlist"
+		"*"
 	],
 	"main": "./out/src/extension",
 	"contributes": {
 		"commands": [
 			{
+				"command": "GitHidder.AddKeyword_Manually",
+				"title": "Add New Keyword"
+			},
+			{
+				"command": "GitHidder.Reveal_All",
+				"title": "Reveal All"
+			},
+			{
 				"command": "GitHidder.OpenFile",
 				"title": "Open File",
 				"icon": {
 					"dark": "resources/OpenFileIconLight.svg",
-					"light": "resources/OpenFileIconLight.svg"
+					"light": "resources/OpenFileIconDark.svg"
 				}
 			},
 			{
@@ -56,19 +64,11 @@
 				}
 			},
 			{
-				"command": "GitHidder.DeleteColor",
-				"title": "Delete color/Reveal all",
+				"command": "GitHidder.DeletePath",
+				"title": "Reveal all those keyword",
 				"icon": {
 					"dark": "resources/dark/cross.svg",
 					"light": "resources/light/cross.svg"
-				}
-			},
-			{
-				"command": "GitHidder.dummy",
-				"title": "Delete color/Reveal all",
-				"icon": {
-					"dark": "resources/green.svg",
-					"light": "resources/green.svg"
 				}
 			},
 			{
@@ -76,40 +76,16 @@
 				"title": "Change color"
 			},
 			{
-				"command": "GitHidder.SaveList",
-				"title": "Save list"
-			},
-			{
 				"command": "GitHidder.AddSelection",
 				"title": "Hide/Reveal this text"
 			},
 			{
 				"command": "GitHidder.EditKeyword",
-				"title": "Edit"
-			},
-			{
-				"command": "GitHidder.ToggleColorRed",
-				"title": "%GitHidder.highlighter.toggleRed.title%"
-			},
-			{
-				"command": "GitHidder.ToggleColorGreen",
-				"title": "%GitHidder.highlighter.toggleGreen.title%"
-			},
-			{
-				"command": "GitHidder.ToggleColorBlue",
-				"title": "%GitHidder.highlighter.toggleBlue.title%"
-			},
-			{
-				"command": "GitHidder.ToggleColorYellow",
-				"title": "%GitHidder.highlighter.toggleYellow.title%"
-			},
-			{
-				"command": "GitHidder.ToggleColorPink",
-				"title": "%GitHidder.highlighter.togglePink.title%"
-			},
-			{
-				"command": "GitHidder.ToggleColorCyan",
-				"title": "%GitHidder.highlighter.toggleCyan.title%"
+				"title": "Edit",
+				"icon": {
+					"dark": "resources/Pencil_Light.svg",
+					"light": "resources/Pencil_Dark.svg"
+				}
 			}
 		],
 		"viewsContainers": {
@@ -133,7 +109,7 @@
 			"view/item/context": [
 				{
 					"command": "GitHidder.OpenFile",
-					"when": "view == keywordlist && viewItem == path",
+					"when": "view == keywordlist && viewItem == highlighter",
 					"group": "inline"
 				},
 				{
@@ -142,7 +118,7 @@
 					"group": "inline"
 				},
 				{
-					"command": "GitHidder.DeleteColor",
+					"command": "GitHidder.DeletePath",
 					"when": "view == keywordlist && viewItem == highlighter",
 					"group": "inline"
 				},
@@ -157,7 +133,7 @@
 					"group": "highlighter@2"
 				},
 				{
-					"command": "GitHidder.DeleteColor",
+					"command": "GitHidder.DeletePath",
 					"when": "view == keywordlist && viewItem == highlighter",
 					"group": "highlighter@3"
 				},
@@ -169,12 +145,19 @@
 				{
 					"command": "GitHidder.EditKeyword",
 					"when": "view == keywordlist && viewItem == keyworditem",
-					"group": "keyworditem@1"
+					"group": "inline"
+				}
+			],
+			"view/title": [
+				{
+					"command": "GitHidder.AddKeyword_Manually",
+					"when": "view == keywordlist",
+					"group": "viewtitle@1"
 				},
 				{
-					"command": "GitHidder.DeleteKeyword",
-					"when": "view == keywordlist && viewItem == keyworditem",
-					"group": "keyworditem@2"
+					"command": "GitHidder.Reveal_All",
+					"when": "view == keywordlist",
+					"group": "viewtitle@2"
 				}
 			],
 			"editor/context": [
