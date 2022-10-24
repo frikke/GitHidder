@@ -16,8 +16,8 @@ Visual Studio Code extension for hiding important credentials, passwords and blo
 - You can hide a new text/keyword/password if you click on the **three dots** icon, on the custom board of the extension, and then ***Add New Keyword***.
 - You can hide a new text/keyword/password if you click on the **+** icon of a file name, on the list of hidden texts.
 
-![sample_Insertion.gif](https://github.com/KonstantinosKol/GitGidder/media/sample_Insertion.gif)
-![Screenshot](https://github.com/KonstantinosKol/GitGidder/media/sample.png?raw=true)
+![sample_Insertion.gif](https://github.com/KonstantinosKol/GitHidder/media/sample_Insertion.gif)
+![Screenshot](https://github.com/KonstantinosKol/GitHidder/media/sample.png?raw=true)
 
 ####  Reveal a hidden password to online repository
 - If you want to reveal (let raw) text/keyword/password at the online repository you can right click and ***Hide/Reveal this text***.
@@ -25,7 +25,7 @@ Visual Studio Code extension for hiding important credentials, passwords and blo
 - You can reveal a the text/keyword/password (with all the others passwords in this file) with the **X** icon on the file name. 
 - You can reveal all the hidden password of the repository, if you select ***Reveal All*** on the **three dots** icon on the custom board of the extension.
 
-![sample_Deletion.gif](https://github.com/KonstantinosKol/GitGidder/media/sample_Deletion.gif)
+![sample_Deletion.gif](https://github.com/KonstantinosKol/GitHidder/media/sample_Deletion.gif)
 
 ## Features
 
