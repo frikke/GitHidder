@@ -2,7 +2,7 @@
 	"name": "GitHidder",
 	"displayName": "GitHidder",
 	"description": "Hiding important passwords text from online repositories with Git.",
-	"version": "1.1.5",
+	"version": "0.0.5",
 	"publisher": "KonstantinosKol",
 	"engines": {
 		"vscode": "^1.36.0"
@@ -174,22 +174,7 @@
 					"GitHidder.upperlimit": {
 						"type": "integer",
 						"default": "100000",
-						"description": "The upper limit of highlighting keyword count"
-					},
-					"GitHidder.savelist": {
-						"type": "array",
-						"items": {
-							"color": {
-								"type": "string"
-							},
-							"keyword": {
-								"type": "array",
-								"items": {
-									"type": "string"
-								}
-							}
-						},
-						"description": "%Saved keywords%"
+						"description": "The upper limit of highlighting password/keyword count"
 					},
 					"GitHidder.brightness.dark": {
 						"type": "integer",
@@ -204,33 +189,9 @@
 						"maximum": "255",
 						"default": "85",
 						"description": "Highlighter brightness (Light theme). 255 is the brightest."
-					},
-					"GitHidder.forcevisible": {
-						"type": "boolean",
-						"default": "true",
-						"description": "Force visible a color when the keyword is added"
 					}
 				}
 			}
 		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "npm run compile && node ./node_modules/vscode/bin/test"
-	},
-	"dependencies": {
-		"minimist": "^1.2.5",
-		"node-async-exec": "^1.2.0"
-	},
-	"devDependencies": {
-		"@types/mocha": "^2.2.42",
-		"@types/node": "^8.10.66",
-		"minimist": "^1.2.5",
-		"tslint": "^5.20.0",
-		"typescript": "^2.6.1",
-		"vscode": "^1.1.21"
 	}
 }
