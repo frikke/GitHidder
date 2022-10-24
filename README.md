@@ -1,71 +1,40 @@
-# GitHidder README
 
-This is the README for your extension "GitHidder". After writing up a brief description, we recommend including the following sections.
+# GitHidder
+
+Visual Studio Code extension for hiding important credentials, passwords and blocks of code, which you don't want to appear in your online repository at any repositories provider that use Git.
+
+
+## Authors
+
+- [@KonstantinosKolotouros](https://github.com/KonstantinosKol)
+
+
+## Capabilities
+
+####  Hide a password from online repository
+- You can hide a text/keyword/password with right click and ***Hide/Reveal this text***
+- You can hide a new text/keyword/password if you click on the **three dots** icon, on the custom board of the extension, and then ***Add New Keyword***.
+- You can hide a new text/keyword/password if you click on the **+** icon of a file name, on the list of hidden texts.
+
+![sample_Insertion.gif](https://github.com/KonstantinosKol/GitGidder/media/sample_Insertion.gif)
+![Screenshot](https://github.com/KonstantinosKol/GitGidder/media/sample.png?raw=true)
+
+####  Reveal a hidden password to online repository
+- If you want to reveal (let raw) text/keyword/password at the online repository you can right click and ***Hide/Reveal this text***.
+- You can reveal the text/keyword/password with the **X** icon on the text/keyword/password at the list of hidden texts, under the file name.
+- You can reveal a the text/keyword/password (with all the others passwords in this file) with the **X** icon on the file name. 
+- You can reveal all the hidden password of the repository, if you select ***Reveal All*** on the **three dots** icon on the custom board of the extension.
+
+![sample_Deletion.gif](https://github.com/KonstantinosKol/GitGidder/media/sample_Deletion.gif)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- You can hide text/keyword/password from a file, without to hide the same text/keyword/password at other file of this repository.
+- If you don't prefer the default color, of the highlighted text/keyword/password you can change the color for each one file.
+- If you rename or edit a file, the list of hidden texts, it will automatically change the file name, or delete the file name with the passwords.
+- You can edit text/keyword/password direct from the list of hidden texts.
+- The replacement of the hidden text/keyword/password on the online repositorie, occurs from a random number of stars symbols (****).
+##  Support
 
-For example if there is an image subfolder under your extension project workspace:
+📫 Please give me feedback on [Github](https://github.com/KonstantinosKol).
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

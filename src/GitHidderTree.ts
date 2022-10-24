@@ -79,6 +79,9 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			filePath = editor.document.fileName;
             filePath=filePath.charAt(0).toUpperCase() + filePath.slice(1)
 			fileName=filePath.replace(this.currentProjectPath,'')
+			if(fileName.split("\\").length - 1 == 1){
+				fileName = fileName.substring(1);
+			}
 		}
 
 		//check commit status
@@ -286,6 +289,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 		}//delete keyword from a path
 		else if (offset instanceof KeywordItem) {
 			this.delete_Keyword(offset)
+			this.refresh();
 		}
 		this.refresh();
 		this.refresh();
@@ -312,6 +316,7 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 			this.data.splice(index,1)
 		}
 
+		this.refresh();
 		await this.Execute_Keywords_and_Paths_filter().then(function () {}).catch(() => {
 			this.undo_deletion(tmpHighlighter.path,tmpHighlighter.fileName,tmpHighlighterKeywords)
 			return new Promise((resolve, reject) => {return reject(false)});
@@ -333,46 +338,39 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 	reveal_All():Promise<boolean>{
 		console.log("---reveal_All()---")
 		vscode.window.showInformationMessage("Do you want reveal all the keywords from to Git?", "Yes", "No")
-		.then(answer => {
+		.then(async answer => {
 			if (answer === "Yes") {
-				this.data.forEach(highlighter => {
-					highlighter.keywordItems.forEach(async KeywordItem =>{
-						await this.check_Git_status(KeywordItem.path).then(function () {}).catch(function () {
-							return new Promise((resolve, reject) => {return reject(false)});
-						});
-			
-						//parse to a temporary var the path
-						let tmpHighlighter = highlighter;
-						//clone to a temporary array keywords of the path
-						let tmpHighlighterKeywords : KeywordItem[];
-						tmpHighlighterKeywords = [...highlighter.keywordItems]
-
-						highlighter.remove(KeywordItem)
-						this.data.splice(0,1);
-						
-
-						await this.Execute_Keywords_and_Paths_filter().then(function () {}).catch(() => {
-							this.undo_deletion(tmpHighlighter.path,tmpHighlighter.fileName,tmpHighlighterKeywords)
-							return new Promise((resolve, reject) => {
-								return reject(false)}
-							);
-						});
-
-						await this.Make_gitattribute_File().then(function () {}).catch(() => {
-							this.undo_deletion(tmpHighlighter.path,tmpHighlighter.fileName,tmpHighlighterKeywords)
-							return new Promise((resolve, reject) => {
-								return reject(false)}
-							);
-						});
-
+				//parse to a temporary var this.data in case off error on Execute_Keywords_and_Paths_filter() or Make_gitattribute_File()
+				let tmpData = this.data;
+				for(let i=this.data.length-1;i>=0;i--){	
+					let filePath = this.data[i].path
+					await this.check_Git_status(this.data[i].path).then(function () {}).catch(function () {
+						vscode.window.showInformationMessage("You need to make at least one change in this file:"+filePath);
+						return new Promise((resolve, reject) => {return reject(false)});
+					});
+					this.data[i].keywordItems.forEach(async KeywordItem =>{
+						this.data[i].remove(KeywordItem)
 					})
-				})
+					this.data.pop();
+				}
+
+				await this.Execute_Keywords_and_Paths_filter().then(function () {}).catch(() => {
+					tmpData.forEach(Highlighter =>{
+						this.undo_deletion(Highlighter.path,Highlighter.fileName,Highlighter.keywordItems)
+					})
+					return new Promise((resolve, reject) => {return reject(false)});
+				});
+
+				await this.Make_gitattribute_File().then(function () {}).catch(() => {
+					tmpData.forEach(Highlighter =>{
+						this.undo_deletion(Highlighter.path,Highlighter.fileName,Highlighter.keywordItems)
+					})
+					return new Promise((resolve, reject) => {return reject(false)});
+				});
 			}
 		})
 		this.refresh();
-		return new Promise((resolve, reject) => {
-			return resolve(true)}
-		);
+		return new Promise((resolve, reject) => {return resolve(true)});
 	}
 
 	//this method is called when user want to hide manually a text from a specific file with file explorer
@@ -411,6 +409,9 @@ export class GitHidderTreeDataProvider implements vscode.TreeDataProvider<vscode
 
 						if(index == -1){
         					let fileName=filePath.replace(this.currentProjectPath,'')
+							if(fileName.split("\\").length - 1 == 1){
+								fileName = fileName.substring(1);
+							}
 			
 							let highlighter = new Highlighter(this.context,this.ColorSet.Red, [],filePath,fileName)
 							highlighter.add(keyword,filePath).then(function () {}).catch(function () {});
@@ -757,6 +758,9 @@ FindPath_and_Keywords(){
 									if(index == -1){
 
 										let fileName=arrayWithPaths[i].replace(this.currentProjectPath,'')
+										if(fileName.split("\\").length - 1 == 1){
+											fileName = fileName.substring(1);
+										}
 
 										let highlighter = new Highlighter(this.context,this.ColorSet.Red, [],arrayWithPaths[i],fileName)
 										highlighter.add(arrayWithKeywords[i],arrayWithPaths[i]).then(function () {}).catch(function () {});
@@ -826,7 +830,10 @@ Rename_File(event: vscode.FileRenameEvent):Promise<boolean>{
 		if(index != -1){
 			
 			//keep temporary old paths, keywords and colortype for undo
-			let tmpHighlighterFileName=oldFilePath.replace(this.currentProjectPath,'')
+			let tmpHighlighterFileName = oldFilePath.replace(this.currentProjectPath,'')
+			if(tmpHighlighterFileName.split("\\").length - 1 == 1){
+				tmpHighlighterFileName = tmpHighlighterFileName.substring(1);
+			}
 			let tmpHighlighterColor = this.data[index].colortype
 
 			let tmpHighlighterKeywords : KeywordItem[];
@@ -901,8 +908,11 @@ Delete_File(event: vscode.FileDeleteEvent):Promise<boolean>{
 		if(index != -1){
 
 			//keep temporary , keywords and colortype for undo
-			let lastSeen = deletedFilePath.lastIndexOf("\\");
-			let tmpHighlighterFileName = deletedFilePath.substr(lastSeen+1,deletedFilePath.length)
+			let tmpHighlighterFileName = deletedFilePath.replace(this.currentProjectPath,'')
+			if(tmpHighlighterFileName.split("\\").length - 1 == 1){
+				tmpHighlighterFileName = tmpHighlighterFileName.substring(1);
+			}
+
 			let tmpHighlighterColor = this.data[index].colortype
 
 			file = tmpHighlighterFileName;

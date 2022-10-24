@@ -1,7 +1,7 @@
 {
 	"name": "GitHidder",
 	"displayName": "GitHidder",
-	"description": "Highlighting keywords in the color you want.",
+	"description": "Hiding important passwords text from online repositories with Git.",
 	"version": "1.1.5",
 	"publisher": "KonstantinosKol",
 	"engines": {
@@ -24,7 +24,7 @@
 		"password",
 		"hidder"
 	],
-	"icon": "Logo-1.png",
+	"icon": "Logo.png",
 	"activationEvents": [
 		"*"
 	],
@@ -101,7 +101,7 @@
 			"GitHidder": [
 				{
 					"id": "keywordlist",
-					"name": "Password List"
+					"name": "Hidden Passwords List"
 				}
 			]
 		},
