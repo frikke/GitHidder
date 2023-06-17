@@ -1,8 +1,8 @@
 {
 	"name": "GitHidder",
 	"displayName": "GitHidder",
-	"description": "Hiding important passwords text from online repositories with Git.",
-	"version": "0.0.5",
+	"description": "Hiding important passwords and secret information text, from online repositories with Git.",
+	"version": "0.0.6",
 	"publisher": "KonstantinosKol",
 	"engines": {
 		"vscode": "^1.36.0"
@@ -22,6 +22,10 @@
 		"hide",
 		"git",
 		"password",
+    "data",
+    "credential",
+    "information",
+    "secret",
 		"hidder"
 	],
 	"icon": "Logo.png",
