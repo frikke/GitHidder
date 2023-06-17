@@ -1,15 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24">
-    <defs>
-        <g>
-            <pattern id="lattice" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse" viewBox="0 0 2 2">
-                <rect fill="lightgray" width="1" height="1" x="0" y="0"/>
-                <rect fill="white" width="1" height="1" x="1" y="0"/>
-                <rect fill="white" width="1" height="1" x="0" y="1"/>
-                <rect fill="lightgray" width="1" height="1" x="1" y="1"/>
-            </pattern>
-        </g>
-    </defs>
-    <g>
-        <rect fill="url(#lattice)" width="24" height="24" x="0" y="0" rx="2" ry="2"/>
-    </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"><defs><g><pattern id="lattice" width="10" height="10" x="0" y="0" patternUnits="userSpaceOnUse" viewBox="0 0 2 2"><rect width="1" height="1" x="0" y="0" fill="#d3d3d3"/><rect width="1" height="1" x="1" y="0" fill="#fff"/><rect width="1" height="1" x="0" y="1" fill="#fff"/><rect width="1" height="1" x="1" y="1" fill="#d3d3d3"/></pattern></g></defs><g><rect width="24" height="24" x="0" y="0" fill="url(#lattice)" rx="2" ry="2"/></g></svg>
